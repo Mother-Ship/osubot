@@ -21,5 +21,6 @@ public class DAO {
                 "123456");
     }
 //TODO 定义对数据库的操作
-
+    //将user对象写入数据库
+    //根据username去数据库取出user对象
 }
