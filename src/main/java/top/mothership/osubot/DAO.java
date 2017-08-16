@@ -1,9 +1,13 @@
 package top.mothership.osubot;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.sql.*;
 
 
 public class DAO {
+    private Logger logger = LogManager.getLogger(this.getClass());
     public DAO() {
         try {
             Class.forName("com.mysql.jdbc.Driver");
