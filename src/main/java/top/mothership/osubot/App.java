@@ -65,10 +65,7 @@ public class App {
 
                         }
 
-                    } catch (ParserException e) {
-                        //e.printStackTrace();
-                        logger.fatal(e.getMessage());
-                    } catch (IOException e) {
+                    } catch (ParserException | IOException e) {
                         //e.printStackTrace();
                         logger.fatal(e.getMessage());
                     }
