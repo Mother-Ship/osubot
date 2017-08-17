@@ -38,8 +38,6 @@ public class User {
         this.count50 = count50;
     }
 
-
-
     public String getUsername() {
         return username;
     }
