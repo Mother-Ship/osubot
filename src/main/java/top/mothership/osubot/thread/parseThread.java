@@ -1,4 +1,4 @@
-package top.mothership.osubot;
+package top.mothership.osubot.thread;
 
 import com.google.gson.JsonSyntaxException;
 import org.apache.logging.log4j.LogManager;

@@ -2,13 +2,13 @@ package top.mothership.osubot;
 
 import cc.plural.jsonij.JSON;
 import cc.plural.jsonij.parser.ParserException;
-import org.java_websocket.WebSocketImpl;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft;
 import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.handshake.ServerHandshake;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import top.mothership.osubot.thread.parseThread;
 
 import java.io.IOException;
 import java.net.URI;
@@ -24,12 +24,16 @@ public class App {
 
     /*
     业务逻辑:监听群消息，当检测到!stat开头的消息时，分割出后面的用户名，开新线程请求屙屎的api
-    拿到数据之后读取数据库，如果数据库没有记录就把当前的用户名写入数据库生成空记录，在结果图片加一句“没有记录”如果有记录就加入对比数据
+
+    拿到用户名之后请求username表，如果username表没有记录则写入记录+返回该用户首次使用本机器人查询
+    如果用户在username中有记录，那就读取后面的天数，生成date去查userinfo表
+    如果有记录就加入对比数据，如果没有记录什么也不做+返回请等待下一次凌晨例行更新
+
     每天凌晨获取数据库“用户名”列的所有成员，并且对osu api进行查询，写入所有数据
 
      */
     public static void main(String[] args) {
-        //TODO 开一个新的线程，用来在凌晨录入数据
+        //业务逻辑：每到凌晨四点，关闭cc，启动db线程进行数据录入，在db线程工作完成后
         try {
             //实现了抽象类就得实现抽象方法，websocket有四个抽象方法：连接，断连，收到消息和出错
             cc = new WebSocketClient(new URI("ws://localhost:25303"), (Draft) new Draft_17()) {

@@ -86,7 +86,7 @@ public class apiUtil {
         Type listType = new TypeToken<List<BP>>() {
         }.getType();
         List<BP> list = new Gson().fromJson(output, listType);
-        //构造北京时间当日凌晨4点的date对象(UTC时间中的上一个晚上八点)
+        //程序不涉及时区转换，这段单纯是判断当前时间在UTC下是否比晚上八点早，是就获取昨天的晚八点，否就获取当天的晚八点
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         Calendar c = Calendar.getInstance();
