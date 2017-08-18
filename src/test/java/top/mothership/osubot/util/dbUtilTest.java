@@ -17,9 +17,7 @@ public class dbUtilTest extends TestCase {
     public void testAddUserName() throws Exception {
         //2.如果不存在，将玩家写入username(通过)
         dbUtil dbUtil = new dbUtil();
-        User user = new User();
-        user.setUsername("Mother Ship");
-        int i = dbUtil.addUserName(user);
+        int i = dbUtil.addUserName("Mother Ship");
         Assert.assertEquals(i,1);
     }
 
@@ -60,14 +58,13 @@ public class dbUtilTest extends TestCase {
         //需要抹掉sql.date对象里的时区信息
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         Calendar c = Calendar.getInstance();
-        c.add(Calendar.DATE,-5);
+        c.add(Calendar.DATE,-7);
         /*遇到的问题是，直接用Date.valueOf("2017-08-17")SQL语句会变成8.16
         指定了MySQL使用UTC时间，为什么会自动减一天呢？
         发现这样生成的时间会带北京时间的信息，在这里也需要设置时区
         */
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         User user  =  dbUtil.getUserInfo("Mother Ship",new Date(c.getTimeInMillis()));
-        Assert.assertEquals(user.getUsername(),"Mother Ship");
+
 
 
     }

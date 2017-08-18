@@ -15,18 +15,19 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 
 public class apiUtil {
-
     private Logger logger = LogManager.getLogger(this.getClass());
-    private final String key = "d259a80f43e73fb5c421fcbeabc7458af822be9f";
     private final String getUserURL = "https://osu.ppy.sh/api/get_user";
     private final String getBPURL = "https://osu.ppy.sh/api/get_user_best";
     private final String getMapURL = "https://osu.ppy.sh/api/get_beatmaps";
+    private String key;
+    //构造器内读取配置文件
+    public apiUtil() {
+        ResourceBundle rb = ResourceBundle.getBundle("cabbage");
+        this.key = rb.getString("key");
+    }
 
 
     //用来请求API，获取用户数据的方法

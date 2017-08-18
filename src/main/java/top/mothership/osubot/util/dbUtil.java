@@ -11,12 +11,11 @@ import java.util.List;
 
 public class dbUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
-    private ResultSet infoRs;
 
     //构造方法内初始化驱动
     public dbUtil() {
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -29,14 +28,34 @@ public class dbUtil {
     }
 
 
+    public String getuserRole(String userName){
+        String querySql = "SELECT `role` FROM `username` WHERE username = ?";
+        try (Connection c = getConnection();
+             PreparedStatement queryPs = c.prepareStatement(querySql)) {
+            queryPs.setString(1, userName);
+            ResultSet rs = queryPs.executeQuery();
+            if(rs.next()){
+                return rs.getString("role");
+            }else{
+                logger.info("玩家"+userName+"在username表中没有记录");
+                return "notFound";
+            }
+        } catch (SQLException e) {
+            logger.error("获取username表中对应id出错");
+            logger.debug(e.getMessage());
+            return "error";
+        }
+    }
+//TODO 编辑用户角色
+
     //有新查询的时候，将数据写入username表
-    public int addUserName(User user) {
+    public int addUserName(String userName) {
 
         String sql = "INSERT INTO `username` (`username`) VALUES (?)";
         try (Connection c = getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             //将User对象的username写入数据库
-            ps.setString(1, user.getUsername());
+            ps.setString(1, userName);
             return ps.executeUpdate();
         } catch (SQLException e) {
             logger.error("写入username表出错");
@@ -68,7 +87,7 @@ public class dbUtil {
         }
 
     }
-
+    //获得用户名对应的id
     public int getUserName(String userName) {
         String querySql = "SELECT `Id` FROM `username` WHERE username = ?";
         try (Connection c = getConnection();
@@ -136,7 +155,7 @@ public class dbUtil {
         String infosql = "SELECT * FROM `userinfo` WHERE `username` = ? AND `queryDate` = ?";
         try (Connection c = getConnection();
              PreparedStatement infoPs = c.prepareStatement(infosql);) {
-            //把参数转化为date对象由dbThread完成，这里直接传入数据库
+            //把参数转化为date对象由调用者完成，这里直接传入数据库
             int i = getUserName(username);
             if (i == 0) {
                 //如果根据用户名查不出用户id
@@ -161,6 +180,7 @@ public class dbUtil {
                 user.setPp_rank(infoRs.getInt("pp_rank"));
                 return user;
             }else{
+                logger.info("没有查询到玩家"+username+"在"+date.toString()+"的记录");
                 return null;
             }
         } catch (SQLException e) {

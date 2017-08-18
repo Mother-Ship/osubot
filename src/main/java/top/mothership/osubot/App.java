@@ -32,6 +32,8 @@ public class App {
     每天凌晨获取数据库“用户名”列的所有成员，并且对osu api进行查询，写入所有数据
 
      */
+    //TODO 思考一下什么东西可以拎出来放在配置文件里
+    //图片布局，模板图的路径，
     public static void main(String[] args) {
         //业务逻辑：每到凌晨四点，关闭cc，启动db线程进行数据录入，在db线程工作完成后
         try {
