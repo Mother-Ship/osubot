@@ -47,7 +47,7 @@ public class dbUtil {
         }
     }
 //TODO 编辑用户角色
-
+//TODO
     //有新查询的时候，将数据写入username表
     public int addUserName(String userName) {
 
@@ -113,7 +113,7 @@ public class dbUtil {
     //此方法可以将uname转换为username表中的id，因此只能写入username中存在的用户，只在凌晨更新的时候使用）
     public int addUserInfo(User user) {
         //id用null,存入日期用当天的UTC时间，后期对比传入时间也转换为UTC处理
-        String sql = "INSERT INTO `userinfo` VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,utc_date())";
+        String sql = "INSERT INTO `userinfo` VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,utc_date())";
 
         try (Connection c = getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -139,6 +139,9 @@ public class dbUtil {
             ps.setLong(10, user.getTotal_score());
             ps.setFloat(11, user.getLevel());
             ps.setInt(12, user.getPp_rank());
+            ps.setInt(13,user.getCount_rank_ss());
+            ps.setInt(14,user.getCount_rank_s());
+            ps.setInt(15,user.getCount_rank_a());
             return ps.executeUpdate();
         } catch (SQLException e) {
             logger.error("写入用户状态出错");
@@ -178,6 +181,9 @@ public class dbUtil {
                 user.setTotal_score(infoRs.getLong("total_score"));
                 user.setLevel(infoRs.getFloat("level"));
                 user.setPp_rank(infoRs.getInt("pp_rank"));
+                user.setCount_rank_ss(infoRs.getInt("count_rank_ss"));
+                user.setCount_rank_s(infoRs.getInt("count_rank_s"));
+                user.setCount_rank_a(infoRs.getInt("count_rank_a"));
                 return user;
             }else{
                 logger.info("没有查询到玩家"+username+"在"+date.toString()+"的记录");

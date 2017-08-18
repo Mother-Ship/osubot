@@ -13,6 +13,33 @@ public class User {
     private Long total_score;
     private Float level;
     private Integer pp_rank;
+    private Integer count_rank_ss;
+    private Integer count_rank_s;
+    private Integer count_rank_a;
+
+    public Integer getCount_rank_ss() {
+        return count_rank_ss;
+    }
+
+    public void setCount_rank_ss(Integer count_rank_ss) {
+        this.count_rank_ss = count_rank_ss;
+    }
+
+    public Integer getCount_rank_s() {
+        return count_rank_s;
+    }
+
+    public void setCount_rank_s(Integer count_rank_s) {
+        this.count_rank_s = count_rank_s;
+    }
+
+    public Integer getCount_rank_a() {
+        return count_rank_a;
+    }
+
+    public void setCount_rank_a(Integer count_rank_a) {
+        this.count_rank_a = count_rank_a;
+    }
 
     public Integer getCount300() {
         return count300;
