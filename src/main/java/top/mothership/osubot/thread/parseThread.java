@@ -5,9 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import top.mothership.osubot.pojo.BP;
-import top.mothership.osubot.util.apiUtil;
-import top.mothership.osubot.util.dbUtil;
-import top.mothership.osubot.util.imgUtil;
+import top.mothership.osubot.util.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +19,8 @@ public class parseThread extends Thread {
     private Logger logger = LogManager.getLogger(this.getClass());
     //直接new好不习惯
     //最后大概是调用imgUtil，在imgUtil里调用api工具
-    private imgUtil apiUtil = new imgUtil();
+    private imgUtil imgUtil = new imgUtil();
+    private apiUtil apiUtil = new apiUtil();
     private dbUtil dbUtil = new dbUtil();
 
 
@@ -35,42 +34,65 @@ public class parseThread extends Thread {
         //如果感叹号后面紧跟stat
         if ("stat".equals(msg.substring(1, 5))) {
             int index = 0;
-            int day = 0;
+            //默认初始化为1
+            int day = 1;
             String username;
 
             if (msg.contains("#")) {
                 index = msg.indexOf("#");
                 day = Integer.valueOf(msg.substring(index + 1));
-                username = msg.substring(6, index);
+                username = msg.substring(6, index-1);
             } else {
                 username = msg.substring(6);
             }
+            if(day<0){
+                String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "天数不能为负值" + "\"}";
+                cc.send(resp);
+                //return void 退出线程
+                return;
+            }
 
-            logger.info("正在获取玩家" + username + "的信息");
+
+
+            logger.info("接收到玩家" + username + "的查询请求");
             if ("a".equals(msg.substring(5, 6))) {
                 //后期做一个文本版本的，暂时这两个命令没什么区别
                 if (msg.contains("#")) {
                     index = msg.indexOf("#");
                     day = Integer.valueOf(msg.substring(index + 1));
-                    username = msg.substring(7, index);
+                    username = msg.substring(7, index-1);
                 } else {
                     username = msg.substring(8);
                 }
             }
             if(dbUtil.getUserName(username)==0){
-                logger.info("玩家"+username+"初次使用本机器人，已在userName表中登记");
+                logger.info("玩家"+username+"初次使用本机器人，开始登记");
                 dbUtil.addUserName(username);
+                try {
+                    dbUtil.addUserInfo(apiUtil.getUser(username));
+                } catch (IOException e) {
+                    logger.error("玩家"+username+"初次登记失败");
+                    logger.error(e.getMessage());
+                }
             }
 
             try {
-                imgUtil imgUtil = new imgUtil();
                 String filename = imgUtil.drawUserInfo(username, day);
-                String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:image,file=" + filename + "]" + "\"}";
+                String resp;
+                if(filename.equals("notExist")) {
+                    resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "玩家不存在" + "\"}";
+                }
+                resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:image,file=" + filename + "]" + "\"}";
                 cc.send(resp);
-
             } catch (JsonSyntaxException e) {
                 logger.error("JSON解析失败");
             } finally {
+                try {
+                    logger.info("线程暂停两秒，以免发送成功前删除文件");
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 File d = new File("E:\\酷Q Pro\\data\\image");
                 String[] list = d.list();
                 if (list != null) {

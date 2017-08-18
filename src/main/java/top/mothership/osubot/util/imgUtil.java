@@ -21,7 +21,6 @@ import java.util.TimeZone;
 
 public class imgUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
-    //TODO 最后生成之后压缩图片减少发送时间
     //TODO recentBP的绘制
     /*设计这个方法
     它应该输入username，应该输出一张完整的stat图的路径
@@ -40,20 +39,21 @@ public class imgUtil {
     }
 
     public String drawUserInfo(String userName, int day) {
-        //将传入的天数转换为Date对象
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        Calendar c = Calendar.getInstance();
-        c.add(Calendar.DATE, -day);
-        //试图查询数据库中指定日期的user
-        User userInDB = dbUtil.getUserInfo(userName, new Date(c.getTimeInMillis()));
-        User userFromAPI = null;
+
+        User userFromAPI;
         try {
             userFromAPI = apiUtil.getUser(userName);
+            //优化流程，在此处直接判断用户存不存在
+            if (userFromAPI == null) {
+                throw new IOException("没有这个玩家");
+            }
         } catch (IOException e) {
-            logger.error("从api获取用户信息失败");
+            logger.error("从api获取玩家信息失败");
             logger.error(e.getMessage());
-            return "error";
+            return "notExist";
         }
+
+
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage bg = null;
         BufferedImage ava = null;
@@ -69,11 +69,12 @@ public class imgUtil {
         try {
             //此处传入的应该是用户的数字id
             ava = pageUtil.getAvatar(userFromAPI.getUser_id());
-        } catch (IOException |NullPointerException e) {
+        } catch (IOException | NullPointerException e) {
             logger.error("从官网获取头像失败");
             logger.error(e.getMessage());
             return "error";
         }
+
 
         //进行缩放
         if (ava.getHeight() > 128 || ava.getWidth() > 128) {
@@ -167,14 +168,45 @@ public class imgUtil {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
         g2.setPaint(Color.decode(rb.getString("timeColor")));
         g2.setFont(new Font(rb.getString("timeFont"), Font.PLAIN, Integer.decode(rb.getString("timeSize"))));
-        g2.drawString( new SimpleDateFormat("yy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime()),
+        g2.drawString(new SimpleDateFormat("yy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime()),
                 Integer.decode(rb.getString("timex")), Integer.decode(rb.getString("timey")));
 
-        if (userInDB != null) {
-            //TODO 绘制这是几天前的数据
+        //---------------------------以上绘制在线部分完成--------------------------------
+        //试图查询数据库中指定日期的user
+        if (day > 0) {
+            /*
+                不带参数：day=1，调用dbUtil拿0天前（日期不变，当天）的数据进行对比（实际上是昨天结束时候的成绩）
+                带day = 0:进入本方法，不读数据库，不进行对比
+                day>0 将day-1，进行对比
+             */
+            //准备在Tip区写东西
+            g2.setFont(new Font(rb.getString("diffFont"), 0, Integer.decode(rb.getString("tipSize"))));
+            g2.setPaint(Color.decode(rb.getString("tipColor")));
 
-            g2.setFont(new Font(rb.getString("diffFont"), 0, Integer.decode(rb.getString("diffSize"))));
+            User userInDB = dbUtil.getUserInfo(userName, day - 1);
+            if (userInDB == null) {
+                //如果第一次没取到
+
+                userInDB = dbUtil.getNearestUserInfo(userName, day - 1);
+                if (day > 1) {
+                    g2.drawString("Compared with Nearest Data",
+                            Integer.decode(rb.getString("tipx")), Integer.decode(rb.getString("tipy")));
+                    //+userInDB.getQueryDate().toString()+
+                }
+
+
+            } else {
+                if (day > 1) {
+                    //如果第一次就取到了
+                    g2.drawString("Compared with" + day + "days ago.",
+                            Integer.decode(rb.getString("tipx")), Integer.decode(rb.getString("tipy")));
+                }
+
+            }
+
+            //这样确保了userInDB不是空的
             //绘制Rank变化
+            g2.setFont(new Font(rb.getString("diffFont"), 0, Integer.decode(rb.getString("diffSize"))));
             if (userInDB.getPp_rank() > userFromAPI.getPp_rank()) {
                 //如果查询的rank比凌晨中的小
                 g2.setPaint(Color.decode(rb.getString("upColor")));
@@ -259,7 +291,7 @@ public class imgUtil {
             //绘制level变化
             if (Float.valueOf(new DecimalFormat("##0.00").format(userInDB.getLevel())) < Float.valueOf(new DecimalFormat("##0.00").format(userFromAPI.getLevel()))) {
                 //同理不写蓝色部分
-                g2.drawString("(↑" +  (int) ((userFromAPI.getLevel() - userInDB.getLevel()) * 100)  + "%)",
+                g2.drawString("(↑" + (int) ((userFromAPI.getLevel() - userInDB.getLevel()) * 100) + "%)",
                         Integer.decode(rb.getString("levelDiffx")), Integer.decode(rb.getString("levelDiffy")));
             } else {
                 g2.drawString("(↑" + Integer.toString(0) + "%)",
@@ -316,16 +348,17 @@ public class imgUtil {
                         Integer.decode(rb.getString("aCountDiffx")), Integer.decode(rb.getString("aCountDiffy")));
             }
 
-        }
 
+        }
         g2.dispose();
         try {
             ImageIO.write(bg, "png", new File("E:\\酷Q Pro\\data\\image\\" + userName + ".png"));
+            return userName + ".png";
         } catch (IOException e) {
             logger.error("绘制图片成品失败");
             logger.error(e.getMessage());
         }
-        return userName + ".png";
+        return "error";
     }
 
 }

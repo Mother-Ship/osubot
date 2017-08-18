@@ -13,6 +13,7 @@ import top.mothership.osubot.thread.parseThread;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.TimeZone;
 
 /**
  * Hello world!
@@ -34,6 +35,7 @@ public class App {
      */
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         //业务逻辑：每到凌晨四点，关闭cc，启动db线程进行数据录入，在db线程工作完成后
         try {
             //实现了抽象类就得实现抽象方法，websocket有四个抽象方法：连接，断连，收到消息和出错
@@ -52,8 +54,8 @@ public class App {
                             String msg = json.get("msg").getString();
                             //对msg进行识别
                             //如果开头是!stat  statd  bp
-                            if (msg.startsWith("!")) {
-                                //如果消息由半角感叹号开头，才获取群名/群号并且进行处理
+                            if (msg.startsWith("!")||msg.startsWith("！")) {
+                                //如果消息由半角/全角感叹号开头，才获取群名/群号并且进行处理
                                 String groupId = json.get("fromGroup").getString();
                                 String groupName = json.get("fromGroupName").getString();
                                 //开启新线程，将msg传入

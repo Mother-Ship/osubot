@@ -6,7 +6,9 @@ import top.mothership.osubot.pojo.User;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 
 
 public class dbUtil {
@@ -23,7 +25,7 @@ public class dbUtil {
 
     public Connection getConnection() throws SQLException {
         //蜜汁错误，需要设置时区？？
-        return DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/osu?characterEncoding=UTF-8&serverTimezone=UTC", "root",
+        return DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/osu?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false", "root",
                 "123456");
     }
 
@@ -47,7 +49,6 @@ public class dbUtil {
         }
     }
 //TODO 编辑用户角色
-//TODO
     //有新查询的时候，将数据写入username表
     public int addUserName(String userName) {
 
@@ -150,10 +151,63 @@ public class dbUtil {
         }
 
     }
+    public User getNearestUserInfo(String username ,int day){
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        Calendar cl = Calendar.getInstance();
+        cl.add(Calendar.DATE, -day);
+        Date date = new Date(cl.getTimeInMillis());
+        User user = new User();
+        //根据距离给定日期的距离来排序
+        String infosql = "SELECT * , abs(UNIX_TIMESTAMP(queryDate) - UNIX_TIMESTAMP(?)) AS ds FROM `userinfo`  WHERE `username` = ? ORDER BY ds ASC ";
+
+        try (Connection c = getConnection();
+             PreparedStatement infoPs = c.prepareStatement(infosql)) {
+            infoPs.setDate(1,date);
+            int i = getUserName(username);
+            if (i == 0) {
+                //如果根据用户名查不出用户id
+                throw new SQLException("非法请求：没有使用过本机器人的玩家应该先调用getUserName查询");
+            }
+            infoPs.setInt(2,i);
+            ResultSet infoRs = infoPs.executeQuery();
+            if (infoRs.next()) {
+                //根据列名来组装user不容易出错
+                user.setUsername(username);
+                user.setUser_id(infoRs.getInt("user_id"));
+                user.setCount300(infoRs.getInt("count300"));
+                user.setCount100(infoRs.getInt("count100"));
+                user.setCount50(infoRs.getInt("count50"));
+                user.setPlaycount(infoRs.getInt("playcount"));
+                user.setAccuracy(infoRs.getFloat("accuracy"));
+                user.setPp_raw(infoRs.getFloat("pp_raw"));
+                user.setRanked_score(infoRs.getLong("ranked_score"));
+                user.setTotal_score(infoRs.getLong("total_score"));
+                user.setLevel(infoRs.getFloat("level"));
+                user.setPp_rank(infoRs.getInt("pp_rank"));
+                user.setCount_rank_ss(infoRs.getInt("count_rank_ss"));
+                user.setCount_rank_s(infoRs.getInt("count_rank_s"));
+                user.setCount_rank_a(infoRs.getInt("count_rank_a"));
+                user.setQueryDate(infoRs.getDate("queryDate"));
+                logger.info("查询到玩家"+username+"最接近于"+new Date(cl.getTimeInMillis()).toString()
+                        +"的位于"+infoRs.getDate("queryDate").toString()+"的记录");
+                return user;
+            }else{
+                logger.info("没有查询到玩家"+username+"最接近于"+new Date(cl.getTimeInMillis()).toString()+"的记录");
+                return null;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return user;
+    }
 
 
     //根据username和date去userinfo中取出user对象
-    public User getUserInfo(String username, Date date) {
+    public User getUserInfo(String username, int day) {
+        //将转换时间的语句拿过来，提高复用性
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        Calendar cl = Calendar.getInstance();
+        cl.add(Calendar.DATE, -day);
         User user = new User();
         String infosql = "SELECT * FROM `userinfo` WHERE `username` = ? AND `queryDate` = ?";
         try (Connection c = getConnection();
@@ -165,7 +219,7 @@ public class dbUtil {
                 throw new SQLException("非法请求：没有使用过本机器人的玩家应该先调用getUserName查询");
             }
             infoPs.setInt(1,i);
-            infoPs.setDate(2,date);
+            infoPs.setDate(2,new Date(cl.getTimeInMillis()));
             ResultSet infoRs = infoPs.executeQuery();
             if (infoRs.next()) {
                 //根据列名来组装user不容易出错
@@ -186,7 +240,7 @@ public class dbUtil {
                 user.setCount_rank_a(infoRs.getInt("count_rank_a"));
                 return user;
             }else{
-                logger.info("没有查询到玩家"+username+"在"+date.toString()+"的记录");
+                logger.info("没有查询到玩家"+username+"在"+new Date(cl.getTimeInMillis()).toString()+"的记录");
                 return null;
             }
         } catch (SQLException e) {
@@ -194,6 +248,9 @@ public class dbUtil {
             logger.error(e.getMessage());
             return null;
         }
+
+
+
 
     }
 

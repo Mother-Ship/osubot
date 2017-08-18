@@ -1,5 +1,7 @@
 package top.mothership.osubot.pojo;
 
+import java.util.Date;
+
 public class User {
     private String username;
     private Integer user_id;
@@ -16,6 +18,15 @@ public class User {
     private Integer count_rank_ss;
     private Integer count_rank_s;
     private Integer count_rank_a;
+    private Date queryDate;
+
+    public Date getQueryDate() {
+        return queryDate;
+    }
+
+    public void setQueryDate(Date queryDate) {
+        this.queryDate = queryDate;
+    }
 
     public Integer getCount_rank_ss() {
         return count_rank_ss;

@@ -11,9 +11,17 @@ import java.util.List;
 import java.util.TimeZone;
 
 public class dbUtilTest extends TestCase {
-/*
-模拟业务逻辑，新来一个玩家叫Mother Ship
- */
+    public void testGetuserRole() throws Exception {
+    }
+
+    public void testGetNearestUserInfo() throws Exception {
+        dbUtil dbUtil = new dbUtil();
+        User user  =  dbUtil.getNearestUserInfo("Mother Ship",7);
+    }
+
+    /*
+    模拟业务逻辑，新来一个玩家叫Mother Ship
+     */
     public void testAddUserName() throws Exception {
         //2.如果不存在，将玩家写入username(通过)
         dbUtil dbUtil = new dbUtil();
@@ -56,15 +64,11 @@ public class dbUtilTest extends TestCase {
         dbUtil dbUtil = new dbUtil();
         //传入参数是距离今天的天数。
         //需要抹掉sql.date对象里的时区信息
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        Calendar c = Calendar.getInstance();
-        c.add(Calendar.DATE,-7);
         /*遇到的问题是，直接用Date.valueOf("2017-08-17")SQL语句会变成8.16
         指定了MySQL使用UTC时间，为什么会自动减一天呢？
         发现这样生成的时间会带北京时间的信息，在这里也需要设置时区
         */
-        User user  =  dbUtil.getUserInfo("Mother Ship",new Date(c.getTimeInMillis()));
-
+        User user  =  dbUtil.getUserInfo("Mother Ship",7);
 
 
     }
