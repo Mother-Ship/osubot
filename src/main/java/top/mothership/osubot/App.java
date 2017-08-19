@@ -8,12 +8,16 @@ import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.handshake.ServerHandshake;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import top.mothership.osubot.thread.entryJob;
 import top.mothership.osubot.thread.parseThread;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
+import java.util.Timer;
 
 /**
  * Hello world!
@@ -35,8 +39,24 @@ public class App {
      */
 
     public static void main(String[] args) {
+        //入口处指定时区
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        //业务逻辑：每到凌晨四点，关闭cc，启动db线程进行数据录入，在db线程工作完成后
+        Calendar c = Calendar.getInstance();
+        //现在想取到UTC时间下一个晚上八点，那如果当前时间比20点早，下一个晚八点是今天的，如果当前时间比20点晚，那就是明天的
+        if(c.get(Calendar.HOUR_OF_DAY)>=20) {
+            c.add(Calendar.DATE, 1);
+        }
+        //这里用HOUR会出现：在早上6点运行，处理后的c.getTime变成08:00:00的问题
+        c.set(Calendar.HOUR_OF_DAY, 20);
+        //整点
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        Timer timer = new Timer();
+
+        long period = 1000*60*60*24;
+        // 从现在开始的下一个UTC 20点，每24小时执行一次
+        timer.schedule(new entryJob(), c.getTime(), period);
+
         try {
             //实现了抽象类就得实现抽象方法，websocket有四个抽象方法：连接，断连，收到消息和出错
             cc = new WebSocketClient(new URI("ws://localhost:25303"), (Draft) new Draft_17()) {
@@ -54,7 +74,7 @@ public class App {
                             String msg = json.get("msg").getString();
                             //对msg进行识别
                             //如果开头是!stat  statd  bp
-                            if (msg.startsWith("!")||msg.startsWith("！")) {
+                            if (msg.startsWith("!") || msg.startsWith("！")) {
                                 //如果消息由半角/全角感叹号开头，才获取群名/群号并且进行处理
                                 String groupId = json.get("fromGroup").getString();
                                 String groupName = json.get("fromGroupName").getString();
@@ -67,6 +87,9 @@ public class App {
                             }
 
                         }
+                        //TODO 私聊edit消息处理
+//                        if (json.get("act").getString().trim().equals("2")) {}
+
 
                     } catch (ParserException | IOException e) {
                         //e.printStackTrace();

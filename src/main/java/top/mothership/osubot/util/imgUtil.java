@@ -34,7 +34,7 @@ public class imgUtil {
         rb = ResourceBundle.getBundle("cabbage");
     }
 
-    public String drawUserInfo(User userFromAPI,User userInDB, int day, boolean near) {
+    public String drawUserInfo(User userFromAPI, User userInDB, int day, boolean near) {
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage bg = null;
         BufferedImage layout = null;
@@ -49,48 +49,51 @@ public class imgUtil {
             logger.error(e.getMessage());
             return "error";
         }
+        Graphics2D g2 = (Graphics2D) bg.getGraphics();
+
+
         try {
             //此处传入的应该是用户的数字id
             ava = pageUtil.getAvatar(userFromAPI.getUser_id());
         } catch (IOException | NullPointerException e) {
             logger.error("从官网获取头像失败");
             logger.error(e.getMessage());
-            return "error";
         }
-
-
-        //进行缩放
-        if (ava.getHeight() > 128 || ava.getWidth() > 128) {
-            //获取原图比例，将较大的值除以128，然后把较小的值去除以这个f
-            int resizedHeight = 0;
-            int resizedWidth = 0;
-            if (ava.getHeight() > ava.getWidth()) {
-                float f = (float) ava.getHeight() / 128;
-                resizedHeight = 128;
-                resizedWidth = (int) (ava.getWidth() / f);
+        if (ava != null) {
+            //进行缩放
+            if (ava.getHeight() > 128 || ava.getWidth() > 128) {
+                //获取原图比例，将较大的值除以128，然后把较小的值去除以这个f
+                int resizedHeight = 0;
+                int resizedWidth = 0;
+                if (ava.getHeight() > ava.getWidth()) {
+                    float f = (float) ava.getHeight() / 128;
+                    resizedHeight = 128;
+                    resizedWidth = (int) (ava.getWidth() / f);
+                } else {
+                    float f = (float) ava.getWidth() / 128;
+                    resizedHeight = (int) (ava.getHeight() / f);
+                    resizedWidth = 128;
+                }
+                resizedAva = new BufferedImage(resizedWidth, resizedHeight, ava.getType());
+                Graphics2D g = (Graphics2D) resizedAva.getGraphics();
+                //这么重画有点锯齿严重，试试其他办法
+//          g.drawImage(ava, 0, 0, resizedWidth, resizedHeight, null);
+                g.drawImage(ava.getScaledInstance(resizedWidth, resizedHeight, Image.SCALE_SMOOTH), 0, 0, resizedWidth, resizedHeight, null);
+                g.dispose();
             } else {
-                float f = (float) ava.getWidth() / 128;
-                resizedHeight = (int) (ava.getHeight() / f);
-                resizedWidth = 128;
+                //如果不需要缩小，直接把引用转过来
+                resizedAva = ava;
             }
-            resizedAva = new BufferedImage(resizedWidth, resizedHeight, ava.getType());
-            Graphics2D g2 = (Graphics2D) resizedAva.getGraphics();
-            //这么重画有点锯齿严重，试试其他办法
-//          g2.drawImage(ava, 0, 0, resizedWidth, resizedHeight, null);
-            g2.drawImage(ava.getScaledInstance(resizedWidth, resizedHeight, Image.SCALE_SMOOTH), 0, 0, resizedWidth, resizedHeight, null);
-            g2.dispose();
-        } else {
-            //如果不需要缩小，直接把引用转过来
-            resizedAva = ava;
+            //先把头像画上去
+            g2.drawImage(resizedAva, Integer.decode(rb.getString("avax")), Integer.decode(rb.getString("avay")), null);
         }
-        //绘制图片
-        Graphics2D g2 = (Graphics2D) bg.getGraphics();
+        //绘制文字
+
         //预留的把布局画到背景图上的代码
         //g2.drawImage(layout,0,0,null);
 
+
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        //先把头像画上去
-        g2.drawImage(resizedAva, Integer.decode(rb.getString("avax")), Integer.decode(rb.getString("avay")), null);
         //开启平滑
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         //绘制用户名
@@ -169,21 +172,19 @@ public class imgUtil {
                 //只有day>1才会出现文字
                 g2.setFont(new Font(rb.getString("diffFont"), 0, Integer.decode(rb.getString("tipSize"))));
                 g2.setPaint(Color.decode(rb.getString("tipColor")));
-                    //TODO 更改提示文字的位置
-                if(near) {
+                //TODO 更改提示文字的位置
+                if (near) {
                     //如果取到的是模糊数据
                     g2.drawString("Compared with Nearest Data",
                             Integer.decode(rb.getString("tipx")), Integer.decode(rb.getString("tipy")));
                     //+userInDB.getQueryDate().toString()+
-                }else {
+                } else {
                     //如果取到的是精确数据
                     g2.drawString("Compared with" + day + "days ago.",
                             Integer.decode(rb.getString("tipx")), Integer.decode(rb.getString("tipy")));
                 }
 
             }
-
-
 
 
             //这样确保了userInDB不是空的
@@ -343,10 +344,9 @@ public class imgUtil {
         return "error";
     }
 
-    public String drawUserInfo(){
+    public String drawUserInfo() {
         return null;
     }
-
 
 
 }

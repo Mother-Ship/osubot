@@ -10,6 +10,8 @@ import top.mothership.osubot.util.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -40,19 +42,37 @@ public class parseThread extends Thread {
             String username;
 
             if (msg.contains("#")) {
+                //潜在风险：如果消息长度超过整型限制会出异常，而且不会有任何回复，考虑到这种情况实在太少见不做处理
                 index = msg.indexOf("#");
-                day = Integer.valueOf(msg.substring(index + 1));
+                try {
+                    day = Integer.valueOf(msg.substring(index + 1));
+                    if(day> (int) ((new Date().getTime() - new SimpleDateFormat("yyyy-MM-dd").parse("2017-09-16").getTime()) / 1000 / 60 / 60 / 24)){
+                        String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "你要找史前时代的数据吗。" + "\"}";
+                        cc.send(resp);
+                        logger.info("指定的日期早于osu!首次发布日期");
+                        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                        return;
+                    }
+                }catch (java.lang.NumberFormatException e){
+                    String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "天数超过整型上限。" + "\"}";
+                    cc.send(resp);
+                    logger.info("天数超过整型上限");
+                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                    return;
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
                 username = msg.substring(6, index-1);
             } else {
                 username = msg.substring(6);
             }
             if(day<0){
-                String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "天数不能为负值" + "\"}";
+                String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "天数不能为负值。" + "\"}";
                 cc.send(resp);
-                //return void 退出线程
+                logger.info("天数不能为负值");
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
                 return;
             }
-
 
 
             logger.info("接收到玩家" + username + "的查询请求");
@@ -72,13 +92,14 @@ public class parseThread extends Thread {
                 userFromAPI = apiUtil.getUser(username);
                 //优化流程，在此处直接判断用户存不存在
                 if (userFromAPI == null) {
-                    String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "官网没有这个玩家" + "\"}";
+                    String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "官网没有这个玩家。" + "\"}";
                     cc.send(resp);
                     throw new IOException("没有这个玩家");
                 }
             } catch (IOException e) {
-                logger.error("从api获取玩家信息失败");
+                logger.error("从api获取玩家"+username+"信息失败");
                 logger.error(e.getMessage());
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
                 return;
             }
 
@@ -128,6 +149,7 @@ public class parseThread extends Thread {
             }
 
         }
+
         //TODO 将bp改造为图片
         if ("bp".equals(msg.substring(1, 3))) {
             String username = msg.substring(4);

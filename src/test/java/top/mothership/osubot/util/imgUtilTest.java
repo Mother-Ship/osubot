@@ -8,7 +8,6 @@ import junit.framework.TestCase;
 public class imgUtilTest extends TestCase {
     public void testDrawTest() throws Exception {
         imgUtil imgUtil = new imgUtil();
-        imgUtil.drawUserInfo("Pata-Mon",2);
 
     }
 

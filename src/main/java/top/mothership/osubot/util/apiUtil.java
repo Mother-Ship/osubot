@@ -87,9 +87,7 @@ public class apiUtil {
         Type listType = new TypeToken<List<BP>>() {
         }.getType();
         List<BP> list = new Gson().fromJson(output, listType);
-        //程序不涉及时区转换，这段单纯是判断当前时间在UTC下是否比晚上八点早，是就获取昨天的晚八点，否就获取当天的晚八点
-
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        //判断当前时间在UTC下是否比晚上八点早，是就获取昨天的晚八点，否就获取当天的晚八点
         Calendar c = Calendar.getInstance();
         //我要取到UTC时间上一个晚上八点，那如果当前时间比20点早，上一个晚八点就是昨天的
         logger.debug(c.getTime());
@@ -102,13 +100,12 @@ public class apiUtil {
         //整点
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
-        logger.debug(c.getTime());
         List<BP> result = new ArrayList<BP>();
 
-        for (int i = 0; i < list.size(); i++) {
+        for (BP aList : list) {
             //对BP进行遍历，如果产生时间晚于当天凌晨4点(UTC时间昨晚八点)
-            if (list.get(i).getDate().after(c.getTime())) {
-                result.add(list.get(i));
+            if (aList.getDate().after(c.getTime())) {
+                result.add(aList);
             }
         }
         return result;
