@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import top.mothership.osubot.pojo.BP;
+import top.mothership.osubot.pojo.User;
 import top.mothership.osubot.util.*;
 
 import java.io.File;
@@ -65,10 +66,27 @@ public class parseThread extends Thread {
                     username = msg.substring(8);
                 }
             }
+
+            User userFromAPI;
+            try {
+                userFromAPI = apiUtil.getUser(username);
+                //优化流程，在此处直接判断用户存不存在
+                if (userFromAPI == null) {
+                    String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "官网没有这个玩家" + "\"}";
+                    cc.send(resp);
+                    throw new IOException("没有这个玩家");
+                }
+            } catch (IOException e) {
+                logger.error("从api获取玩家信息失败");
+                logger.error(e.getMessage());
+                return;
+            }
+
             if(dbUtil.getUserName(username)==0){
                 logger.info("玩家"+username+"初次使用本机器人，开始登记");
                 dbUtil.addUserName(username);
                 try {
+                    //玩家初次使用本机器人，直接在数据库登记当天数据
                     dbUtil.addUserInfo(apiUtil.getUser(username));
                 } catch (IOException e) {
                     logger.error("玩家"+username+"初次登记失败");
@@ -76,13 +94,17 @@ public class parseThread extends Thread {
                 }
             }
 
+            boolean near = false;
+            User userInDB = dbUtil.getUserInfo(username, day - 1);
+            if (userInDB == null) {
+                //如果第一次没取到
+                userInDB = dbUtil.getNearestUserInfo(username, day - 1);
+                near = true;
+            }
+
             try {
-                String filename = imgUtil.drawUserInfo(username, day);
-                String resp;
-                if(filename.equals("notExist")) {
-                    resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "玩家不存在" + "\"}";
-                }
-                resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:image,file=" + filename + "]" + "\"}";
+                String filename = imgUtil.drawUserInfo(userFromAPI,userInDB, day,near);
+                String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:image,file=" + filename + "]" + "\"}";
                 cc.send(resp);
             } catch (JsonSyntaxException e) {
                 logger.error("JSON解析失败");

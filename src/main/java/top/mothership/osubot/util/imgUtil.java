@@ -27,40 +27,23 @@ public class imgUtil {
     */
     private ResourceBundle rb;
     private pageUtil pageUtil;
-    private dbUtil dbUtil;
-    private apiUtil apiUtil;
 
     public imgUtil() {
         //构造器内初始化配置文件以及工具类
         pageUtil = new pageUtil();
-        dbUtil = new dbUtil();
-        apiUtil = new apiUtil();
         rb = ResourceBundle.getBundle("cabbage");
     }
 
-    public String drawUserInfo(String userName, int day) {
-
-        User userFromAPI;
-        try {
-            userFromAPI = apiUtil.getUser(userName);
-            //优化流程，在此处直接判断用户存不存在
-            if (userFromAPI == null) {
-                throw new IOException("没有这个玩家");
-            }
-        } catch (IOException e) {
-            logger.error("从api获取玩家信息失败");
-            logger.error(e.getMessage());
-            return "notExist";
-        }
-
-
+    public String drawUserInfo(User userFromAPI,User userInDB, int day, boolean near) {
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage bg = null;
+        BufferedImage layout = null;
         BufferedImage ava = null;
         BufferedImage resizedAva = null;
         try {
             //使用guava的类直接调用图片
-            bg = ImageIO.read(new File(Resources.getResource(rb.getString("bg")).toURI()));
+            bg = ImageIO.read(new File(Resources.getResource(rb.getString("userbg")).toURI()));
+            //layout = ImageIO.read(new File(Resources.getResource(rb.getString("userlayout")).toURI()));
         } catch (IOException | URISyntaxException e) {
             logger.error("读取背景图片失败");
             logger.error(e.getMessage());
@@ -102,6 +85,9 @@ public class imgUtil {
         }
         //绘制图片
         Graphics2D g2 = (Graphics2D) bg.getGraphics();
+        //预留的把布局画到背景图上的代码
+        //g2.drawImage(layout,0,0,null);
+
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         //先把头像画上去
         g2.drawImage(resizedAva, Integer.decode(rb.getString("avax")), Integer.decode(rb.getString("avay")), null);
@@ -177,32 +163,28 @@ public class imgUtil {
             /*
                 不带参数：day=1，调用dbUtil拿0天前（日期不变，当天）的数据进行对比（实际上是昨天结束时候的成绩）
                 带day = 0:进入本方法，不读数据库，不进行对比
-                day>0 将day-1，进行对比
+                day>1
              */
-            //准备在Tip区写东西
-            g2.setFont(new Font(rb.getString("diffFont"), 0, Integer.decode(rb.getString("tipSize"))));
-            g2.setPaint(Color.decode(rb.getString("tipColor")));
-
-            User userInDB = dbUtil.getUserInfo(userName, day - 1);
-            if (userInDB == null) {
-                //如果第一次没取到
-
-                userInDB = dbUtil.getNearestUserInfo(userName, day - 1);
-                if (day > 1) {
+            if (day > 1) {
+                //只有day>1才会出现文字
+                g2.setFont(new Font(rb.getString("diffFont"), 0, Integer.decode(rb.getString("tipSize"))));
+                g2.setPaint(Color.decode(rb.getString("tipColor")));
+                    //TODO 更改提示文字的位置
+                if(near) {
+                    //如果取到的是模糊数据
                     g2.drawString("Compared with Nearest Data",
                             Integer.decode(rb.getString("tipx")), Integer.decode(rb.getString("tipy")));
                     //+userInDB.getQueryDate().toString()+
-                }
-
-
-            } else {
-                if (day > 1) {
-                    //如果第一次就取到了
+                }else {
+                    //如果取到的是精确数据
                     g2.drawString("Compared with" + day + "days ago.",
                             Integer.decode(rb.getString("tipx")), Integer.decode(rb.getString("tipy")));
                 }
 
             }
+
+
+
 
             //这样确保了userInDB不是空的
             //绘制Rank变化
@@ -352,13 +334,19 @@ public class imgUtil {
         }
         g2.dispose();
         try {
-            ImageIO.write(bg, "png", new File("E:\\酷Q Pro\\data\\image\\" + userName + ".png"));
-            return userName + ".png";
+            ImageIO.write(bg, "png", new File("E:\\酷Q Pro\\data\\image\\" + userFromAPI.getUsername() + ".png"));
+            return userFromAPI.getUsername() + ".png";
         } catch (IOException e) {
             logger.error("绘制图片成品失败");
             logger.error(e.getMessage());
         }
         return "error";
     }
+
+    public String drawUserInfo(){
+        return null;
+    }
+
+
 
 }
