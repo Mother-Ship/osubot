@@ -30,7 +30,7 @@ public class dbUtil {
     }
 
 
-    public String getuserRole(String userName){
+    public String getUserRole(String userName){
         String querySql = "SELECT `role` FROM `username` WHERE username = ?";
         try (Connection c = getConnection();
              PreparedStatement queryPs = c.prepareStatement(querySql)) {
@@ -48,7 +48,21 @@ public class dbUtil {
             return "error";
         }
     }
-//TODO 编辑用户角色
+
+    public int editUserRole(String username,String role){
+        String sql = "UPDATE`username` SET `role` = ? WHERE username = ?";
+        try (Connection c = getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1,role);
+            ps.setString(2,username);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("更新玩家角色出错");
+            logger.error(e.getMessage());
+            return 0;
+        }
+
+    }
     //有新查询的时候，将数据写入username表
     public int addUserName(String userName) {
 

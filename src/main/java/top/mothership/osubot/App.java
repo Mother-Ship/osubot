@@ -8,14 +8,14 @@ import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.handshake.ServerHandshake;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import top.mothership.osubot.thread.adminThread;
 import top.mothership.osubot.thread.entryJob;
-import top.mothership.osubot.thread.parseThread;
+import top.mothership.osubot.thread.playerThread;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.TimeZone;
 import java.util.Timer;
 
@@ -41,6 +41,7 @@ public class App {
     public static void main(String[] args) {
         //入口处指定时区
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        logger.info("欢迎使用白菜1.0");
         Calendar c = Calendar.getInstance();
         //现在想取到UTC时间下一个晚上八点，那如果当前时间比20点早，下一个晚八点是今天的，如果当前时间比20点晚，那就是明天的
         if(c.get(Calendar.HOUR_OF_DAY)>=20) {
@@ -55,6 +56,7 @@ public class App {
 
         long period = 1000*60*60*24;
         // 从现在开始的下一个UTC 20点，每24小时执行一次
+        logger.info("定时任务已添加：于"+c.getTime()+"开始每24小时执行一次");
         timer.schedule(new entryJob(), c.getTime(), period);
 
         try {
@@ -69,30 +71,53 @@ public class App {
                         //
                         JSON json = JSON.parse(message);
                         //原作者使用了String.format，我尝试使用.getString方法。其实我没用过这个json解析器……
+                        //新增一个入口，检测是否是管理员消息
+                        // 原有逻辑：如果是群消息，对msg进行识别，如果感叹号开头就开启新线程传入。
+                        // 现有逻辑：如果是群消息，识别是否是管理员专用的消息，如果是就交给adminThread，其他消息交给playerThread
                         //如果这条消息是群消息的话
                         if (json.get("act").getString().trim().equals("2")) {
                             String msg = json.get("msg").getString();
                             //对msg进行识别
-                            //如果开头是!stat  statd  bp
                             if (msg.startsWith("!") || msg.startsWith("！")) {
                                 //如果消息由半角/全角感叹号开头，才获取群名/群号并且进行处理
                                 String groupId = json.get("fromGroup").getString();
                                 String groupName = json.get("fromGroupName").getString();
-                                //开启新线程，将msg传入
-                                parseThread pt = new parseThread(msg, groupId, cc);
-                                logger.info("检测到来自【" + groupName + "】的群消息："
-                                        + msg + ",已交给线程" + pt.toString() + "处理");
+                                //如果是需要提权的操作
+                                if ("sudo".equals(msg.substring(1, 5))) {
+                                    String fromQQ = json.get("fromQQ").getString();
+                                    adminThread at = new adminThread(msg,groupId,fromQQ,cc);
+                                    logger.info("检测到来自【" + groupName + "】的提权操作群消息："
+                                            + msg + ",已交给线程" + at.toString() + "处理");
+                                    at.start();
+                                }else {
+                                    //开启新线程，将msg传入
+                                    playerThread pt = new playerThread(msg, groupId, cc);
+                                    logger.info("检测到来自【" + groupName + "】的群消息："
+                                            + msg + ",已交给线程" + pt.toString() + "处理");
 
-                                pt.start();
+                                    pt.start();
+                                }
                             }
-
                         }
-                        //TODO 私聊edit消息处理
-//                        if (json.get("act").getString().trim().equals("2")) {}
 
+                        if (json.get("act").getString().trim().equals("21")) {
+                            //处理私聊消息
+                            String msg = json.get("msg").getString();
+                            //对msg进行识别
+                            if (msg.startsWith("!") || msg.startsWith("！")) {
+                                //如果消息由半角/全角感叹号开头，获取消息发送者并且进行处理
+                                String fromQQ = json.get("fromQQ").getString();
+                                //如果是需要提权的操作
+                                if ("sudo".equals(msg.substring(1, 5))) {
+                                    adminThread at = new adminThread(msg, fromQQ, cc);
+                                    logger.info("检测到来自【" + fromQQ + "】的提权操作私聊消息："
+                                            + msg + ",已交给线程" + at.toString() + "处理");
+                                    at.start();
+                                }
+                            }
+                        }
 
                     } catch (ParserException | IOException e) {
-                        //e.printStackTrace();
                         logger.fatal(e.getMessage());
                     }
                 }
