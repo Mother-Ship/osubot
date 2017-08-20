@@ -49,14 +49,26 @@ public class adminThread extends Thread {
         admin = Arrays.asList(rb.getString("admin").split(","));
     }
 
-    public void sendGroupMsg(String text) {
-        String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + text + "\"}";
-        cc.send(resp);
-    }
 
     public void sendMsg(String text) {
-        String resp = "{\"act\": \"106\", \"QQID\": \"" + fromQQ + "\", \"msg\":\"" + text + "\"}";
-        cc.send(resp);
+        if (group) {
+            String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + text + "\"}";
+            cc.send(resp);
+        } else {
+            String resp = "{\"act\": \"106\", \"QQID\": \"" + fromQQ + "\", \"msg\":\"" + text + "\"}";
+            cc.send(resp);
+        }
+    }
+
+    //    public void kick(String QQID){
+//        if(group){
+//            String resp = "{\"act\": \"121\", \"QQID\": \"" + QQID + "\", \"groupid\": \"" + groupId + "\", \"rejectaddrequest\": \"" + "false" + "\",}";
+//            cc.send(resp);
+//        }else{
+//        }
+//    }
+    public void smoke(String QQID, String duration) {
+
     }
 
     @Override
@@ -67,11 +79,9 @@ public class adminThread extends Thread {
 //        !sudo 退群
 //        !sudo bg <role> [图片]
         if (!admin.contains(fromQQ)) {
-            if (group) {
-                sendGroupMsg("需要管理员权限");
-            } else {
-                sendMsg("需要管理员权限");
-            }
+
+            sendMsg("需要管理员权限");
+
             return;
         }
 
@@ -90,11 +100,7 @@ public class adminThread extends Thread {
                 } catch (IndexOutOfBoundsException e) {
                     logger.error("字符串处理错误");
                     logger.error(e.getMessage());
-                    if (group) {
-                        sendGroupMsg("输入格式错误。");
-                    } else {
-                        sendMsg("输入格式错误。");
-                    }
+                    sendMsg("输入格式错误。");
                     logger.info("线程" + this.getName() + "处理完毕，已经退出");
                     return;
                 }
@@ -117,6 +123,7 @@ public class adminThread extends Thread {
                 while (retry < 3) {
                     //用网上抄来的retry机制
                     try {
+                        logger.info("开始从API获取"+usernames[i]+"的信息");
                         user = apiUtil.getUser(usernames[i]);
                         //如果成功就跳出循环
                         break;
@@ -140,8 +147,9 @@ public class adminThread extends Thread {
                         //如果username库中没有这个用户
                         dbUtil.addUserName(user.getUsername());
                         dbUtil.addUserInfo(user);
-
+                        logger.info("将用户"+user.getUsername()+"添加到数据库。");
                         if (usernames.length == 1) {
+                            logger.info("新增单个用户，绘制名片");
                             img = imgUtil.drawUserInfo(user, null, 0, false);
                         }
                         addList.add(user.getUsername());
@@ -174,7 +182,7 @@ public class adminThread extends Thread {
                 resp = resp.concat("\\n不存在的：" + nullList.toString());
             }
             if (errorList.size() > 0) {
-                resp = resp.concat("\\n网络错误：" + nullList.toString());
+                resp = resp.concat("\\n网络错误：" + errorList.toString());
             }
             if (usernames.length == 0) {
                 resp = "没有做出改动。";
@@ -183,11 +191,9 @@ public class adminThread extends Thread {
                 //这时候是只有单个用户，而且绘制名片,相当于usernames.length==1
                 resp = resp.concat("\\n[CQ:image,file=" + img + "]");
             }
-            if (group) {
-                sendGroupMsg(resp);
-            } else {
-                sendMsg(resp);
-            }
+
+            sendMsg(resp);
+
             logger.info("线程" + this.getName() + "处理完毕，已经退出");
         }
         if ("check".equals(msg.substring(6, 11))) {
@@ -198,25 +204,79 @@ public class adminThread extends Thread {
             } catch (IndexOutOfBoundsException e) {
                 logger.error("字符串处理出错");
                 logger.error(e.getMessage());
-                if (group) {
-                    sendGroupMsg("输入格式错误。");
-                } else {
-                    sendMsg("输入格式错误。");
-                }
+                sendMsg("输入格式错误。");
                 logger.info("线程" + this.getName() + "处理完毕，已经退出");
                 return;
             }
 
-            if(dbUtil.getUserName(username)>0){
-                //TODO 根据返回值获取权限并发消息
+            if (dbUtil.getUserName(username) > 0) {
+                String role = dbUtil.getUserRole(username);
+                logger.info("获取了玩家" + username + "的用户组" + role + "。");
+                sendMsg("玩家" + username + "的用户组" + "是" + role + "。");
+            } else {
+                logger.info("玩家" + username + "没有使用过白菜，请先使用add命令添加。");
+                sendMsg("玩家" + username + "没有使用过白菜，请先使用add命令添加。");
             }
-
-
 
         }
 
-        if ("退群".equals(msg.substring(6, 8))) {
-
+        if ("退群".equals(msg.substring(6, 8)) || "褪裙".equals(msg.substring(6, 8))) {
+            String resp;
+            String role;
+            try {
+                role = msg.substring(9);
+            } catch (IndexOutOfBoundsException e) {
+                logger.error("字符串处理出错");
+                logger.error(e.getMessage());
+                sendMsg("输入格式错误。");
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                return;
+            }
+            List<String> list = dbUtil.listUserInfoByRole(role);
+            List<String> overflowList = new ArrayList<>();
+            for (int i = 0; i < list.size(); i++) {
+                //拿到用户当天的数据
+                User user = dbUtil.getUserInfo(list.get(i), 1);
+                //如果PP超过了警戒线，请求API拿到最新PP
+                if (user.getPp_raw() > Integer.valueOf(rb.getString("mp5RiskPP"))) {
+                    user = null;
+                    int retry = 0;
+                    while (retry < 3) {
+                        //用网上抄来的retry机制
+                        try {
+                            logger.info("开始从API获取"+list.get(i)+"的信息");
+                            user = apiUtil.getUser(list.get(i));
+                            //如果成功就跳出循环
+                            break;
+                        } catch (IOException e) {
+                            logger.error("从api获取玩家" + list.get(i) + "信息失败");
+                            logger.error(e.getMessage());
+                            logger.error("开始重试，第" + (retry + 1) + "次");
+                            //如果失败就计数器+1
+                            retry++;
+                        }
+                    }
+                    if (retry == 3) {
+                        logger.error("玩家" + list.get(i) + "重试三次失败，直接返回网络错误");
+                        sendMsg("网络错误。");
+                        return;
+                    }
+                    //这时候user不会空了，因为如果还是空就已经跳出去了
+                    if (user.getPp_raw() > Integer.valueOf(rb.getString("mp5PP")) + 0.49) {
+                        logger.info("玩家" + list.get(i) + "超限，已记录");
+                        overflowList.add(list.get(i));
+                    }else{
+                        logger.info("玩家" + list.get(i) + "没有超限");
+                    }
+                }
+            }
+            resp = "查询PP溢出玩家完成。";
+            if (overflowList.size() > 0) {
+                resp = resp.concat("\\n查询到"+role+"用户组中，以下玩家：" + overflowList.toString()+"PP超出了设定的限制。");
+            }else{
+                resp = resp.concat("\\n没有检测"+role+"用户组中PP溢出的玩家。" );
+            }
+            sendMsg(resp);
         }
 
         if ("bg".equals(msg.substring(6, 8))) {

@@ -105,7 +105,6 @@ public class playerThread extends Thread {
             } catch (IOException e) {
                 logger.error("从api获取玩家" + username + "信息失败");
                 logger.error(e.getMessage());
-                sendGroupMsg("出错了：" + e.getMessage());
                 logger.info("线程" + this.getName() + "处理完毕，已经退出");
                 return;
             }
@@ -119,10 +118,10 @@ public class playerThread extends Thread {
             }
 
             boolean near = false;
-            User userInDB = dbUtil.getUserInfo(username, day - 1);
+            User userInDB = dbUtil.getUserInfo(username, day);
             if (userInDB == null) {
                 //如果第一次没取到
-                userInDB = dbUtil.getNearestUserInfo(username, day - 1);
+                userInDB = dbUtil.getNearestUserInfo(username, day);
                 near = true;
             }
 

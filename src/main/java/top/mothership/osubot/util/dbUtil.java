@@ -48,6 +48,28 @@ public class dbUtil {
             return "error";
         }
     }
+    //为!褪裙功能使用
+    public List<String> listUserInfoByRole(String role) {
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT `username` FROM `username` WHERE `role` = ?";
+        try (Connection c = getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1,role);
+            ResultSet rs = ps.executeQuery();
+            //循环从结果集中取出用户名
+            while (rs.next()) {
+                String userName = rs.getString("username");
+                list.add(userName);
+            }
+            //将list返回
+            return list;
+        } catch (SQLException e) {
+            logger.error("遍历username表出错");
+            logger.error(e.getMessage());
+            return null;
+        }
+
+    }
 
     public int editUserRole(String username,String role){
         String sql = "UPDATE`username` SET `role` = ? WHERE username = ?";
@@ -166,6 +188,7 @@ public class dbUtil {
 
     }
     public User getNearestUserInfo(String username ,int day){
+        day--;
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         Calendar cl = Calendar.getInstance();
         cl.add(Calendar.DATE, -day);
@@ -218,6 +241,8 @@ public class dbUtil {
 
     //根据username和date去userinfo中取出user对象
     public User getUserInfo(String username, int day) {
+        //约定参数，传入dbutil的和传入imgutil的得一致
+        day--;
         //将转换时间的语句拿过来，提高复用性
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         Calendar cl = Calendar.getInstance();

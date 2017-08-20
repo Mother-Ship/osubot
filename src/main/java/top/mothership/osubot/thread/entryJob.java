@@ -35,12 +35,18 @@ public class entryJob extends TimerTask {
                     logger.error("从api获取玩家" + aList + "信息失败");
                     logger.error(e.getMessage());
                 }
+                try {
+                    //停止500ms，避免触发API频繁操作
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             dbUtil.addUserInfo(user);
             logger.info("将" + user.getUsername() + "的数据录入成功");
             try {
-                //停止2s，避免触发API频繁操作
-                Thread.sleep(2000);
+                //停止500ms，避免触发API频繁操作
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
