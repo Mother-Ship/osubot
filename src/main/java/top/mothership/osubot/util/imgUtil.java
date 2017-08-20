@@ -48,9 +48,6 @@ public class imgUtil {
         BufferedImage layout = null;
         BufferedImage ava = null;
         BufferedImage resizedAva = null;
-        //TODO 先读取这个用户组对应的图片,如果是creep就用默认的
-
-
         try {
             //使用guava的类读取路径
             layout = ImageIO.read(new File(Resources.getResource(rb.getString("userlayout")).toURI()));

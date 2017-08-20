@@ -14,7 +14,7 @@ public class pageUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final String getAvaURL = "https://a.ppy.sh/";
 
-    //TODO 后续解析dom树获取网页内容
+    //后续在这个类里解析dom树获取网页内容
     //将异常抛出给调用者
     public BufferedImage getAvatar(int uid) throws IOException {
             URL avaurl = new URL(getAvaURL + uid + "?.png");
