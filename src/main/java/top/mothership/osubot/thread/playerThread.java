@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.ResourceBundle;
 
 
 public class playerThread extends Thread {
@@ -29,12 +30,13 @@ public class playerThread extends Thread {
     private imgUtil imgUtil = new imgUtil();
     private apiUtil apiUtil = new apiUtil();
     private dbUtil dbUtil = new dbUtil();
-
+    private ResourceBundle rb;
 
     public playerThread(String msg, String groupId, WebSocketClient cc) {
         this.msg = msg;
         this.groupId = groupId;
         this.cc = cc;
+        rb = ResourceBundle.getBundle("cabbage");
     }
 
     public void sendGroupMsg(String text) {
@@ -96,6 +98,7 @@ public class playerThread extends Thread {
             User userFromAPI;
 
             try {
+                logger.info("开始调用API查询"+username+"的信息");
                 userFromAPI = apiUtil.getUser(username);
                 //优化流程，在此处直接判断用户存不存在
                 if (userFromAPI == null) {
@@ -124,9 +127,12 @@ public class playerThread extends Thread {
                 userInDB = dbUtil.getNearestUserInfo(username, day);
                 near = true;
             }
+            String role = dbUtil.getUserRole(username);
 
-
-            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, day, near);
+            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB,role, day, near);
+            if(filename.equals("error")){
+                sendGroupMsg("绘图过程中发生致命错误。");
+            }
             sendGroupMsg("[CQ:image,file=" + filename + "]");
             try {
                 logger.info("线程暂停两秒，以免发送成功前删除文件");
@@ -134,7 +140,7 @@ public class playerThread extends Thread {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            File f = new File("E:\\酷Q Pro\\data\\image\\" + filename);
+            File f = new File(rb.getString("path")+"\\data\\image\\" + filename);
             f.delete();
 
 

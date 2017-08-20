@@ -8,7 +8,14 @@ import top.mothership.osubot.util.apiUtil;
 import top.mothership.osubot.util.dbUtil;
 import top.mothership.osubot.util.imgUtil;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -71,6 +78,13 @@ public class adminThread extends Thread {
 
     }
 
+    public void paramError(Exception e) {
+        logger.error("字符串处理出错");
+        logger.error(e.getMessage());
+        sendMsg("输入格式错误。");
+        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+    }
+
     @Override
     public void run() {
         //处理修改
@@ -79,9 +93,7 @@ public class adminThread extends Thread {
 //        !sudo 退群
 //        !sudo bg <role> [图片]
         if (!admin.contains(fromQQ)) {
-
             sendMsg("需要管理员权限");
-
             return;
         }
 
@@ -98,10 +110,7 @@ public class adminThread extends Thread {
                         throw new IndexOutOfBoundsException("字符串不含冒号");
                     }
                 } catch (IndexOutOfBoundsException e) {
-                    logger.error("字符串处理错误");
-                    logger.error(e.getMessage());
-                    sendMsg("输入格式错误。");
-                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                    paramError(e);
                     return;
                 }
 
@@ -123,7 +132,7 @@ public class adminThread extends Thread {
                 while (retry < 3) {
                     //用网上抄来的retry机制
                     try {
-                        logger.info("开始从API获取"+usernames[i]+"的信息");
+                        logger.info("开始从API获取" + usernames[i] + "的信息");
                         user = apiUtil.getUser(usernames[i]);
                         //如果成功就跳出循环
                         break;
@@ -147,10 +156,10 @@ public class adminThread extends Thread {
                         //如果username库中没有这个用户
                         dbUtil.addUserName(user.getUsername());
                         dbUtil.addUserInfo(user);
-                        logger.info("将用户"+user.getUsername()+"添加到数据库。");
+                        logger.info("将用户" + user.getUsername() + "添加到数据库。");
                         if (usernames.length == 1) {
                             logger.info("新增单个用户，绘制名片");
-                            img = imgUtil.drawUserInfo(user, null, 0, false);
+                            img = imgUtil.drawUserInfo(user, null, role, 0, false);
                         }
                         addList.add(user.getUsername());
                     } else {
@@ -191,21 +200,16 @@ public class adminThread extends Thread {
                 //这时候是只有单个用户，而且绘制名片,相当于usernames.length==1
                 resp = resp.concat("\\n[CQ:image,file=" + img + "]");
             }
-
             sendMsg(resp);
 
             logger.info("线程" + this.getName() + "处理完毕，已经退出");
         }
         if ("check".equals(msg.substring(6, 11))) {
             String username;
-            String resp;
             try {
                 username = msg.substring(12);
             } catch (IndexOutOfBoundsException e) {
-                logger.error("字符串处理出错");
-                logger.error(e.getMessage());
-                sendMsg("输入格式错误。");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                paramError(e);
                 return;
             }
 
@@ -226,30 +230,27 @@ public class adminThread extends Thread {
             try {
                 role = msg.substring(9);
             } catch (IndexOutOfBoundsException e) {
-                logger.error("字符串处理出错");
-                logger.error(e.getMessage());
-                sendMsg("输入格式错误。");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                paramError(e);
                 return;
             }
             List<String> list = dbUtil.listUserInfoByRole(role);
             List<String> overflowList = new ArrayList<>();
-            for (int i = 0; i < list.size(); i++) {
+            for (String aList : list) {
                 //拿到用户当天的数据
-                User user = dbUtil.getUserInfo(list.get(i), 1);
+                User user = dbUtil.getUserInfo(aList, 1);
                 //如果PP超过了警戒线，请求API拿到最新PP
-                if (user.getPp_raw() > Integer.valueOf(rb.getString("mp5RiskPP"))) {
+                if (user.getPp_raw() > Integer.valueOf(rb.getString(role+"RiskPP"))) {
                     user = null;
                     int retry = 0;
                     while (retry < 3) {
                         //用网上抄来的retry机制
                         try {
-                            logger.info("开始从API获取"+list.get(i)+"的信息");
-                            user = apiUtil.getUser(list.get(i));
+                            logger.info("开始从API获取" + aList + "的信息");
+                            user = apiUtil.getUser(aList);
                             //如果成功就跳出循环
                             break;
                         } catch (IOException e) {
-                            logger.error("从api获取玩家" + list.get(i) + "信息失败");
+                            logger.error("从api获取玩家" + aList + "信息失败");
                             logger.error(e.getMessage());
                             logger.error("开始重试，第" + (retry + 1) + "次");
                             //如果失败就计数器+1
@@ -257,29 +258,61 @@ public class adminThread extends Thread {
                         }
                     }
                     if (retry == 3) {
-                        logger.error("玩家" + list.get(i) + "重试三次失败，直接返回网络错误");
+                        logger.error("玩家" + aList + "重试三次失败，直接返回网络错误");
                         sendMsg("网络错误。");
                         return;
                     }
                     //这时候user不会空了，因为如果还是空就已经跳出去了
-                    if (user.getPp_raw() > Integer.valueOf(rb.getString("mp5PP")) + 0.49) {
-                        logger.info("玩家" + list.get(i) + "超限，已记录");
-                        overflowList.add(list.get(i));
-                    }else{
-                        logger.info("玩家" + list.get(i) + "没有超限");
+                    if (user.getPp_raw() > Integer.valueOf(rb.getString(role+"PP")) + 0.49) {
+                        logger.info("玩家" + aList + "超限，已记录");
+                        overflowList.add(aList);
+                    } else {
+                        logger.info("玩家" + aList + "没有超限");
                     }
                 }
             }
             resp = "查询PP溢出玩家完成。";
             if (overflowList.size() > 0) {
-                resp = resp.concat("\\n查询到"+role+"用户组中，以下玩家：" + overflowList.toString()+"PP超出了设定的限制。");
-            }else{
-                resp = resp.concat("\\n没有检测"+role+"用户组中PP溢出的玩家。" );
+                resp = resp.concat("\\n查询到" + role + "用户组中，以下玩家：" + overflowList.toString() + "PP超出了设定的限制。");
+            } else {
+                resp = resp.concat("\\n没有检测" + role + "用户组中PP溢出的玩家。");
             }
             sendMsg(resp);
         }
 
         if ("bg".equals(msg.substring(6, 8))) {
+            String img;
+            String role;
+            BufferedImage bg;
+            String URL;
+            try {
+                int a = msg.indexOf("[");
+                role = msg.substring(9, a - 1);
+                img = msg.substring(a + 15, msg.length() - 1).concat(".cqimg");
+            } catch (IndexOutOfBoundsException e) {
+                paramError(e);
+                return;
+            }
+
+            File file = new File(rb.getString("path")+"\\data\\image\\"+img);
+            try (FileReader fr = new FileReader(file)) {
+                char[] all = new char[(int) file.length()];
+                // 以字符流的形式读取文件所有内容
+                fr.read(all);
+                //这里应该用String的构造器而不是Arrays.toString
+                URL = new String(all).substring(new String(all).indexOf("https"),new String(all).indexOf("addtime")-2);
+            } catch (IOException e) {
+                paramError(e);
+                return;
+            }
+            try {
+                //此处传入的应该是用户的数字id
+                bg= ImageIO.read(new URL(URL));
+            } catch (IOException e) {
+                logger.error("根据URL下载背景图失败");
+                logger.error(e.getMessage());
+            }
+
 
         }
 

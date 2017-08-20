@@ -77,6 +77,9 @@ public class App {
                         //如果这条消息是群消息的话
                         if (json.get("act").getString().trim().equals("2")) {
                             String msg = json.get("msg").getString();
+                            //对msg进行反转义
+                            msg  = msg.replaceAll("&#91;","[");
+                            msg  = msg.replaceAll("&#93;","]");
                             //对msg进行识别
                             if (msg.startsWith("!") || msg.startsWith("！")) {
                                 //如果消息由半角/全角感叹号开头，才获取群名/群号并且进行处理
@@ -88,6 +91,7 @@ public class App {
                                     adminThread at = new adminThread(msg,groupId,fromQQ,cc);
                                     logger.info("检测到来自【" + groupName + "】的提权操作群消息："
                                             + msg + ",已交给线程" + at.toString() + "处理");
+                                    //TODO 对字符串中的[]进行替换复原
                                     at.start();
                                 }else {
                                     //开启新线程，将msg传入
@@ -139,4 +143,7 @@ public class App {
             logger.error("WebSocket服务器地址无效");
         }
     }
+
+
+
 }

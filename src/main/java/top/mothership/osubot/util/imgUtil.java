@@ -42,23 +42,42 @@ public class imgUtil {
 
     }
 
-    public String drawUserInfo(User userFromAPI, User userInDB, int day, boolean near) {
+    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage bg = null;
         BufferedImage layout = null;
         BufferedImage ava = null;
         BufferedImage resizedAva = null;
+        //TODO 先读取这个用户组对应的图片,如果是creep就用默认的
+
+
         try {
-            //使用guava的类直接调用图片
-            bg = ImageIO.read(new File(Resources.getResource(rb.getString("userbg")).toURI()));
-            //layout = ImageIO.read(new File(Resources.getResource(rb.getString("userlayout")).toURI()));
+            //使用guava的类读取路径
+            layout = ImageIO.read(new File(Resources.getResource(rb.getString("userlayout")).toURI()));
         } catch (IOException | URISyntaxException e) {
-            logger.error("读取背景图片失败");
+            logger.error("读取布局图片失败");
             logger.error(e.getMessage());
             return "error";
         }
-        Graphics2D g2 = (Graphics2D) bg.getGraphics();
 
+        try {
+            bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\bg\\" + role + ".png"));
+        } catch (IOException e) {
+            //所有没有独立bg的都采用默认bg
+            try {
+                bg = ImageIO.read(new File(Resources.getResource(rb.getString("defaultbg")).toURI()));
+            } catch (IOException | URISyntaxException e1) {
+                logger.error("读取背景图片失败");
+                logger.error(e.getMessage());
+                return "error";
+            }
+        }
+
+
+        //将布局图片初始化
+        Graphics2D g2 = (Graphics2D) bg.getGraphics();
+        //把布局画到bg上
+        g2.drawImage(layout, 0, 0, null);
 
         try {
             //此处传入的应该是用户的数字id
@@ -300,8 +319,8 @@ public class imgUtil {
         }
         g2.dispose();
         try {
-            ImageIO.write(bg, "png", new File("E:\\酷Q Pro\\data\\image\\" + userFromAPI.getUsername() + ".png"));
-            return userFromAPI.getUsername() + ".png";
+            ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\" + userFromAPI.getUser_id() + ".png"));
+            return userFromAPI.getUser_id() + ".png";
         } catch (IOException e) {
             logger.error("绘制图片成品失败");
             logger.error(e.getMessage());
