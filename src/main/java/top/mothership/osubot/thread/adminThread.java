@@ -293,7 +293,7 @@ public class adminThread extends Thread {
                 paramError(e);
                 return;
             }
-
+            logger.info("接受到图片信息，开始解析URL");
             File file = new File(rb.getString("path")+"\\data\\image\\"+img);
             try (FileReader fr = new FileReader(file)) {
                 char[] all = new char[(int) file.length()];
@@ -306,16 +306,27 @@ public class adminThread extends Thread {
                 return;
             }
             try {
-                //此处传入的应该是用户的数字id
+                logger.info("开始根据URL下载新背景。");
                 bg= ImageIO.read(new URL(URL));
             } catch (IOException e) {
                 logger.error("根据URL下载背景图失败");
                 logger.error(e.getMessage());
+                sendMsg("从TX服务器获取该背景图失败。");
+                return;
             }
-
-
+            //并不需要删除旧图片
+            try {
+                logger.info("开始将新背景写入硬盘");
+                ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\bg\\" + role + ".png"));
+            } catch (IOException e) {
+                logger.error("将新背景写入硬盘失败");
+                logger.error(e.getMessage());
+                sendMsg("将新背景写入硬盘失败。");
+                return;
+            }
+            sendMsg("修改用户组"+role+"的背景图成功。");
         }
-
+        logger.info("线程" + this.getName() + "处理完毕，已经退出");
 
     }
 }
