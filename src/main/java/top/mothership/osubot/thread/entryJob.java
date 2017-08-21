@@ -50,7 +50,9 @@ public class entryJob extends TimerTask {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
         }
+        logger.info("所有数据录入完成。");
     }
 
 

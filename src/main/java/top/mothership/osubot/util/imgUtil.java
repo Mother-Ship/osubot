@@ -12,11 +12,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.Buffer;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.ResourceBundle;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.List;
 
 public class imgUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
@@ -34,12 +34,62 @@ public class imgUtil {
     }
 
     public void draw(Graphics2D g2, String color, String font, String size, String text, String x, String y) {
+        //指定颜色
         g2.setPaint(Color.decode(rb.getString(color)));
         //指定字体
         g2.setFont(new Font(rb.getString(font), 0, Integer.decode(rb.getString(size))));
         //指定坐标
         g2.drawString(text, Integer.decode(rb.getString(x)), Integer.decode(rb.getString(y)));
 
+    }
+    public String convertMOD(Integer bp){
+        String modBin = Integer.toBinaryString(bp);
+        //反转mod
+        modBin =  new StringBuffer(modBin).reverse().toString();
+        List<String> mods = new ArrayList<>();
+        char[] c = modBin.toCharArray();
+        for(int i=c.length-1;i>=0;i--){
+            if(c[i]=='1'){
+                //字符串中第i个字符是1,意味着第i+1个mod被开启了
+                switch (i) {
+                    case 0:
+                        mods.add("NF");
+                        break;
+                    case 1:
+                        mods.add("EZ");
+                        break;
+                    case 3:
+                        mods.add("HD");
+                        break;
+                    case 4:
+                        mods.add("HR");
+                        break;
+                    case 5:
+                        mods.add("SD");
+                        break;
+                    case 6:
+                        mods.add("DT");
+                        break;
+                    case 8:
+                        mods.add("HT");
+                        break;
+                    case 9:
+                        mods.add("NC");
+                        break;
+                    case 10:
+                        mods.add("FL");
+                        break;
+                    case 12:
+                        mods.add("SO");
+                        break;
+                    case 14:
+                        mods.add("PF");
+                        break;
+                }
+
+            }
+        }
+        return mods.toString().substring(1,mods.toString().length());
     }
 
     public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
@@ -116,9 +166,9 @@ public class imgUtil {
         //预留的把布局画到背景图上的代码
         //g2.drawImage(layout,0,0,null);
 
-
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         //开启平滑
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
         //绘制用户名
         draw(g2, "unameColor", "unameFont", "unameSize", userFromAPI.getUsername(), "namex", "namey");
 
@@ -166,11 +216,11 @@ public class imgUtil {
         //---------------------------以上绘制在线部分完成--------------------------------
         //试图查询数据库中指定日期的user
         if (day > 0) {
-            /*
-                不带参数：day=1，调用dbUtil拿0天前（日期不变，当天）的数据进行对比（实际上是昨天结束时候的成绩）
+                /*
+                不带参数：day=1，调用dbUtil拿当天凌晨（UTC时间日期是昨天，同时也是昨天结束时候的成绩）的数据进行对比
                 带day = 0:进入本方法，不读数据库，不进行对比
-                day>1
-             */
+                day>1，例如day=2，21号进入本方法，查的是19号结束时候的成绩
+                */
             if (day > 1) {
                 //临时关闭平滑
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
@@ -321,13 +371,206 @@ public class imgUtil {
         } catch (IOException e) {
             logger.error("绘制图片成品失败");
             logger.error(e.getMessage());
+            return "error";
         }
-        return "error";
     }
 
-    //TODO recentBP的绘制
-    public String drawUserBP(String username, BP bp) {
-        return null;
+    public String drawUserBP(User user, List<BP> list) {
+        //思路：获取list的大小，把每个list成员的.getbeatmapName信息绘制到图片上
+        BufferedImage bpTop;
+        BufferedImage A;
+        BufferedImage B;
+        BufferedImage C;
+        BufferedImage D;
+        BufferedImage X;
+        BufferedImage XH;
+        BufferedImage S;
+        BufferedImage SH;
+        //根据谱面名称+难度的长度，将所有BP分为两个List
+        List<BP> bp2 = new ArrayList<>();
+        List<BP> bp3 = new ArrayList<>();
+        List<BufferedImage> bpmids2 = new ArrayList<>();
+        List<BufferedImage> bpmids3 = new ArrayList<>();
+        int width = 0;
+        int bpTopHeight = 0;
+        int bpMid2Height = 0;
+        int bpMid3Height = 0;
+        try {
+            //使用guava的类读取路径
+            bpTop = ImageIO.read(new File(Resources.getResource(rb.getString("bptop")).toURI()));
+            A=ImageIO.read(new File(Resources.getResource(rb.getString("A")).toURI()));
+            B=ImageIO.read(new File(Resources.getResource(rb.getString("B")).toURI()));
+            C=ImageIO.read(new File(Resources.getResource(rb.getString("C")).toURI()));
+            D=ImageIO.read(new File(Resources.getResource(rb.getString("D")).toURI()));
+            X=ImageIO.read(new File(Resources.getResource(rb.getString("X")).toURI()));
+            XH=ImageIO.read(new File(Resources.getResource(rb.getString("XH")).toURI()));
+            S=ImageIO.read(new File(Resources.getResource(rb.getString("S")).toURI()));
+            SH=ImageIO.read(new File(Resources.getResource(rb.getString("SH")).toURI()));
+            for (int i = 0; i < list.size(); i++) {
+                //准备好和BP数量相同的List
+                if (list.get(i).getBeatmap_name().length() < Integer.valueOf(rb.getString("bplimit"))) {
+                    //根据谱面名称+难度的长度读取BG
+                    BufferedImage bpmidTmp = ImageIO.read(new File(Resources.getResource(rb.getString("bpmid2")).toURI()));
+                    bpmids2.add(bpmidTmp);
+                    bp2.add(list.get(i));
+                    bpMid2Height = bpmidTmp.getHeight();
+                } else {
+                    BufferedImage bpmidTmp = ImageIO.read(new File(Resources.getResource(rb.getString("bpmid3")).toURI()));
+                    bpmids3.add(bpmidTmp);
+                    bp3.add(list.get(i));
+                    bpMid3Height = bpmidTmp.getHeight();
+                }
+                width = bpTop.getWidth();
+                bpTopHeight = bpTop.getHeight();
+            }
+        } catch (IOException | URISyntaxException e) {
+            logger.error("读取BP布局图片失败");
+            logger.error(e.getMessage());
+            return "error";
+        }
+        //规划出结果图的尺寸(2行BP数量*2行BP图高度+3行BP数量*3行BP高度)
+        BufferedImage result = new BufferedImage(width, bpMid2Height*bp2.size()+bpMid3Height*bp3.size(), BufferedImage.TYPE_INT_RGB);
+
+
+        //在头部图片上绘制用户名
+        Graphics2D g2 = (Graphics2D) bpTop.getGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        draw(g2,"bpUnameColor","bpUnameFont","bpUnameSize",user.getUsername(),"bpUnamex","bpUnamey");
+        g2.dispose();
+        //将头部图片转换为数组
+        int[] ImageArrayTop = new int[width * bpTopHeight];
+        ImageArrayTop = bpTop.getRGB(0, 0, width, bpTopHeight, ImageArrayTop, 0, width);
+        //将头部图片先画上去
+        result.setRGB(0, 0, width, bpTopHeight, ImageArrayTop, 0, width);
+
+
+        for (int i = 0; i < bp2.size(); i++) {
+            String mods;
+            if(bp2.get(i).getEnabled_mods()>0){
+                mods = convertMOD(bp2.get(i).getEnabled_mods());
+            }else{
+                mods = "None";
+            }
+            //准备将字符串写入图片
+            Graphics2D g = (Graphics2D) bpmids2.get(i).getGraphics();
+            //绘制小图
+            switch (bp2.get(i).getRank()){
+                case "A":
+                    g.drawImage(A, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+                case "B":
+                    g.drawImage(B, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+                case "C":
+                    g.drawImage(C, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+                case "D":
+                    g.drawImage(D, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+                case "X":
+                    g.drawImage(X, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+                case "XH":
+                    g.drawImage(XH, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+                case "S":
+                    g.drawImage(S, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+                case "SH":
+                    g.drawImage(SH, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
+                    break;
+            }
+
+            //开启平滑
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            //开始绘制谱面名称，因为是二行的数据所以不需要分割
+            draw(g, "bpNameColor", "bpNameFont", "bpNameSize",
+                    bp2.get(i).getBeatmap_name()+"("+ new DecimalFormat("###.00").format(100.0 * (6*bp2.get(i).getCount300() + 2*bp2.get(i).getCount100() + bp2.get(i).getCount50()) / (6*(bp2.get(i).getCount50() + bp2.get(i).getCount100() + bp2.get(i).getCount300() + bp2.get(i).getCountmiss())))+"%)", "bp2Namex", "bp2Namey");
+            //绘制日期(强转北京时间)
+            draw(g, "bpDateColor", "bpDateFont", "bpDateSize",
+                    new SimpleDateFormat("MM-dd HH:mm").format(bp2.get(i).getDate().getTime()+1000*60*60*8), "bp2Datex", "bp2Datey");
+            //绘制MOD
+            draw(g,"bpModColor","bpModFont","bpModSize",mods,"bpModx" ,"bpMody");
+            //绘制PP
+            draw(g,"bpPPColor","bpPPFont","bpPPSize",Integer.toString(Math.round(bp2.get(i).getPp())),"bp2PPx","bp2PPy");
+            g.dispose();
+            //将它变成数组
+            int[] ImageArray = new int[width * bpMid2Height];
+            ImageArray = bpmids2.get(i).getRGB(0, 0, width, bpMid2Height, ImageArray, 0, width);
+            //横坐标是0，纵坐标是i+1*每个格子的高度，大小是每个格子的宽高
+            result.setRGB(0, bpMid2Height * (i + 1), width, bpMid2Height, ImageArray, 0, width);//将数组写入缓冲图片
+        }
+
+        for (int i = 0; i < bp3.size(); i++) {
+            String mods;
+            if(bp3.get(i).getEnabled_mods()>0){
+                mods = convertMOD(bp3.get(i).getEnabled_mods());
+            }else{
+                mods = "None";
+            }
+            //准备将字符串写入图片
+            Graphics2D g = (Graphics2D) bpmids3.get(i).getGraphics();
+            //绘制小图
+            switch (bp3.get(i).getRank()){
+                case "A":
+                    g.drawImage(A, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+                case "B":
+                    g.drawImage(B, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+                case "C":
+                    g.drawImage(C, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+                case "D":
+                    g.drawImage(D, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+                case "X":
+                    g.drawImage(X, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+                case "XH":
+                    g.drawImage(XH, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+                case "S":
+                    g.drawImage(S, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+                case "SH":
+                    g.drawImage(SH, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
+                    break;
+            }
+
+            //开启平滑
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            //开始绘制谱面名称，因为是二行的数据所以不需要分割
+            draw(g, "bpNameColor", "bpNameFont", "bpNameSize",
+                    bp3.get(i).getBeatmap_name()+"("+ new DecimalFormat("###.00").format(100.0 * (6*bp3.get(i).getCount300() + 2*bp3.get(i).getCount100() + bp3.get(i).getCount50()) / (6*(bp3.get(i).getCount50() + bp3.get(i).getCount100() + bp3.get(i).getCount300() + bp3.get(i).getCountmiss())))+"%)", "bp3Namex", "bp3Namey");
+            //绘制日期(强转北京时间)
+            draw(g, "bpDateColor", "bpDateFont", "bpDateSize",
+                    new SimpleDateFormat("MM-dd HH:mm").format(bp3.get(i).getDate().getTime()+1000*60*60*8), "bp3Datex", "bp3Datey");
+            //绘制MOD
+            draw(g,"bpModColor","bpModFont","bpModSize",mods,"bpModx" ,"bpMody");
+            //绘制PP
+            draw(g,"bpPPColor","bpPPFont","bpPPSize",Integer.toString(Math.round(bp2.get(i).getPp())),"bp3PPx","bp3PPy");
+            g.dispose();
+            //将它变成数组
+            int[] ImageArray = new int[width * bpMid2Height];
+            ImageArray = bpmids2.get(i).getRGB(0, 0, width, bpMid2Height, ImageArray, 0, width);
+            //横坐标是0，纵坐标是i+1*每个格子的高度，大小是每个格子的宽高
+            result.setRGB(0, bpMid2Height * (i + 1), width, bpMid2Height, ImageArray, 0, width);//将数组写入缓冲图片
+        }
+
+
+
+
+        //生成新图片
+        try {
+            ImageIO.write(result, "png", new File(rb.getString("path") + "\\data\\image\\" + user.getUser_id() + ".png"));
+            return user.getUser_id() + ".png";
+        } catch (IOException e) {
+            logger.error("绘制图片成品失败");
+            logger.error(e.getMessage());
+            return "error";
+        }
+
     }
 
 

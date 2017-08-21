@@ -3,7 +3,7 @@
 <configuration status="off" monitorInterval="1800">
     <properties>
         <!--日志目录-->
-        <property name="LOG_HOME">/logs/webLog</property>
+        <property name="LOG_HOME">/logs/osubot</property>
         <!-- 日志备份目录 -->
         <property name="BACKUP_HOME">{LOG_HOME}/backup</property>
         <property name="STAT_NAME">stat</property>

@@ -188,8 +188,6 @@ public class dbUtil {
 
     }
     public User getNearestUserInfo(String username ,int day){
-        day--;
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         Calendar cl = Calendar.getInstance();
         cl.add(Calendar.DATE, -day);
         Date date = new Date(cl.getTimeInMillis());
@@ -242,11 +240,20 @@ public class dbUtil {
     //根据username和date去userinfo中取出user对象
     public User getUserInfo(String username, int day) {
         //约定参数，传入dbutil的和传入imgutil的得一致
-        day--;
-        //将转换时间的语句拿过来，提高复用性
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        /*
+                不带参数：day=1，调用dbUtil拿当天凌晨（UTC时间日期是昨天，同时也是昨天结束时候的成绩）的数据进行对比，不需要-1，直接在日历里提早一天
+                带day = 0:进入本方法，不读数据库，不进行对比
+                day>1，例如day=2，21号进入本方法，查的是19号结束时候的成绩
+                */
+
         Calendar cl = Calendar.getInstance();
         cl.add(Calendar.DATE, -day);
+        //在这里进行处理，如果UTC时间是20-24的时候，进行当前日期+1的操作
+        //北京时间凌晨4点-8点的查询，进入程序会被认为是前一天的查询，需要修正
+        if(20<cl.get(Calendar.HOUR_OF_DAY)&&cl.get(Calendar.HOUR_OF_DAY)<24){
+            cl.add(Calendar.DATE, 1);
+        }
+
         User user = new User();
         String infosql = "SELECT * FROM `userinfo` WHERE `username` = ? AND `queryDate` = ?";
         try (Connection c = getConnection();

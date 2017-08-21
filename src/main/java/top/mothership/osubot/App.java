@@ -90,14 +90,13 @@ public class App {
                                     String fromQQ = json.get("fromQQ").getString();
                                     adminThread at = new adminThread(msg,groupId,fromQQ,cc);
                                     logger.info("检测到来自【" + groupName + "】的提权操作群消息："
-                                            + msg + ",已交给线程" + at.toString() + "处理");
-                                    //TODO 对字符串中的[]进行替换复原
+                                            + msg + ",已交给线程" + at.getId() + "处理");
                                     at.start();
                                 }else {
                                     //开启新线程，将msg传入
                                     playerThread pt = new playerThread(msg, groupId, cc);
                                     logger.info("检测到来自【" + groupName + "】的群消息："
-                                            + msg + ",已交给线程" + pt.toString() + "处理");
+                                            + msg + ",已交给线程" + pt.getId() + "处理");
 
                                     pt.start();
                                 }

@@ -1,8 +1,10 @@
 package top.mothership.osubot.util;
 
 import junit.framework.TestCase;
+import top.mothership.osubot.MOD;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -10,10 +12,7 @@ import java.util.List;
  */
 public class imgUtilTest extends TestCase {
     public void testDrawTest() throws Exception {
-        List<String> list = new ArrayList<>();
-        list.add("www");
-        list.add("eee");
-        String a  = list.toString();
+
 
 
     }

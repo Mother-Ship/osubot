@@ -59,7 +59,7 @@ public class apiUtil {
 
 
     //用来请求API获取今日BP的方法
-    public List<BP> getBP(String username) throws IOException {
+    public List<BP> getTodayBP(String username) throws IOException {
         HttpURLConnection httpConnection =
                 (HttpURLConnection) new URL(getBPURL + "?k=" + key + "&limit=100&u=" + username).openConnection();
         //设置请求头
@@ -82,7 +82,7 @@ public class apiUtil {
         //手动关闭流
         httpConnection.disconnect();
         responseBuffer.close();
-        logger.info("获得了" + username + "玩家的前100BP");
+        logger.info("获得了" + username + "玩家的前100BP，正在筛选今日BP");
         //定义返回的List
         Type listType = new TypeToken<List<BP>>() {
         }.getType();
@@ -90,7 +90,6 @@ public class apiUtil {
         //判断当前时间在UTC下是否比晚上八点早，是就获取昨天的晚八点，否就获取当天的晚八点
         Calendar c = Calendar.getInstance();
         //我要取到UTC时间上一个晚上八点，那如果当前时间比20点早，上一个晚八点就是昨天的
-        logger.debug(c.getTime());
         //用HOUR会出现前一个getTIme为22:06也进if块
         if(c.get(Calendar.HOUR_OF_DAY)<20) {
             c.add(Calendar.DATE, -1);
@@ -108,6 +107,7 @@ public class apiUtil {
                 result.add(aList);
             }
         }
+        logger.info("筛选今日BP成功");
         return result;
     }
 

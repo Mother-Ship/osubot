@@ -98,7 +98,7 @@ public class playerThread extends Thread {
             User userFromAPI;
 
             try {
-                logger.info("开始调用API查询"+username+"的信息");
+                logger.info("开始调用API查询" + username + "的信息");
                 userFromAPI = apiUtil.getUser(username);
                 //优化流程，在此处直接判断用户存不存在
                 if (userFromAPI == null) {
@@ -112,10 +112,10 @@ public class playerThread extends Thread {
                 return;
             }
 
-            if (dbUtil.getUserName(username) == 0) {
+            if (dbUtil.getUserName(userFromAPI.getUsername()) == 0) {
                 //玩家初次使用本机器人，直接在数据库登记当天数据
-                logger.info("玩家" + username + "初次使用本机器人，开始登记");
-                dbUtil.addUserName(username);
+                logger.info("玩家" + userFromAPI.getUsername() + "初次使用本机器人，开始登记");
+                dbUtil.addUserName(userFromAPI.getUsername());
                 dbUtil.addUserInfo(userFromAPI);
 
             }
@@ -129,9 +129,91 @@ public class playerThread extends Thread {
             }
             String role = dbUtil.getUserRole(username);
 
-            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB,role, day, near);
-            if(filename.equals("error")){
+            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
+            if (filename.equals("error")) {
                 sendGroupMsg("绘图过程中发生致命错误。");
+            }
+            //由于带[]的玩家，生成的文件名会导致返回出错，直接在imgUtil改为用数字id生成文件
+            sendGroupMsg("[CQ:image,file=" + filename + "]");
+            try {
+                logger.info("线程暂停两秒，以免发送成功前删除文件");
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            //删掉生成的文件
+            File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
+            f.delete();
+
+
+        }
+
+
+        if ("bp".equals(msg.substring(1, 3))) {
+            String username = msg.substring(4);
+            logger.info("接收到玩家" + username + "的BP查询请求");
+            List<BP> list;
+            User user;
+            //代码复用性还是低了点，如果以后再加功能考虑重构
+            //调用getNearestUserInfo方法，查询数据库中是否有该用户名的记录
+            if (dbUtil.getUserName(username) != 0) {
+                user = dbUtil.getNearestUserInfo(username, 1);
+            } else {
+                //是个没用过白菜的人呢
+                try {
+                    user = apiUtil.getUser(username);
+                    if (user == null) {
+                        sendGroupMsg("没有在官网查到这个玩家。");
+                        throw new IOException("没有这个玩家");
+                    }
+                } catch (IOException e) {
+                    logger.error("从api获取玩家" + username + "信息失败");
+                    logger.error(e.getMessage());
+                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                    return;
+                }
+                //玩家初次使用本机器人，直接在数据库登记当天数据
+                logger.info("玩家" + username + "初次使用本机器人，开始登记");
+                dbUtil.addUserName(username);
+                dbUtil.addUserInfo(user);
+
+
+            }
+
+
+            try {
+                list = apiUtil.getTodayBP(user.getUsername());
+                if (list.size() == 0) {
+                    sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
+                    throw new IOException("没有查到该玩家今天更新的BP");
+                }
+            } catch (IOException e) {
+                logger.error("从api获取玩家" + user.getUsername() + "今日BP信息失败");
+                logger.error(e.getMessage());
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                return;
+            }
+
+
+            //保证list不为空
+            for (BP aList : list) {
+                //对BP进行遍历，请求API将名称写入
+                String name;
+                try {
+                    logger.info("正在获取Beatmap id为" +aList.getBeatmap_id()+"的谱面的名称");
+                    name = apiUtil.getMapName(aList.getBeatmap_id());
+                } catch (IOException e) {
+                    logger.error("从api获取谱面" + aList.getBeatmap_id() + "的名称失败");
+                    logger.error(e.getMessage());
+                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                    return;
+                }
+                aList.setBeatmap_name(name);
+            }
+            logger.info("正在绘制今日BP");
+            String filename = imgUtil.drawUserBP(user, list);
+            if (filename.equals("error")) {
+                sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
             }
             sendGroupMsg("[CQ:image,file=" + filename + "]");
             try {
@@ -140,37 +222,9 @@ public class playerThread extends Thread {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            File f = new File(rb.getString("path")+"\\data\\image\\" + filename);
+            //删掉生成的文件
+            File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
             f.delete();
-
-
-        }
-
-
-        //TODO 将bp改造为图片
-        if ("bp".equals(msg.substring(1, 3))) {
-            String username = msg.substring(4);
-            try {
-                //调用方法拿到返回的今日BP
-                logger.info("正在获取玩家" + username + "的今日BP");
-//                List<BP> result = apiUtil.getBP(username);
-                List<BP> result = new ArrayList<>();
-                String resp = null;
-                if (result.size() > 0) {
-                    resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "该玩家今日没有更新BP" + "\"}";
-                    logger.info("玩家" + username + "发起了对今日BP的请求，获取了" + result.size() + "条BP");
-                    cc.send(resp);
-                } else {
-                    resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "该玩家今日没有更新BP" + "\"}";
-                    logger.info("玩家" + username + "发起了对今日BP的请求，但是今天没有更新BP");
-                    cc.send(resp);
-                }
-            } catch (JsonSyntaxException e) {
-                logger.error("JSON解析失败");
-                logger.error(e.getMessage());
-            }
-
-
         }
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
     }
