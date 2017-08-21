@@ -42,6 +42,8 @@ public class entryJob extends TimerTask {
                     e.printStackTrace();
                 }
             }
+            //清除当日stat时添加的临时数据
+            dbUtil.clearTodayData();
             dbUtil.addUserInfo(user);
             logger.info("将" + user.getUsername() + "的数据录入成功");
             try {

@@ -237,7 +237,7 @@ public class adminThread extends Thread {
             List<String> overflowList = new ArrayList<>();
             for (String aList : list) {
                 //拿到用户当天的数据
-                User user = dbUtil.getUserInfo(aList, 1);
+                User user = dbUtil.getNearestUserInfo(aList, 1);
                 //如果PP超过了警戒线，请求API拿到最新PP
                 if (user.getPp_raw() > Integer.valueOf(rb.getString(role+"RiskPP"))) {
                     user = null;
@@ -286,32 +286,35 @@ public class adminThread extends Thread {
             BufferedImage bg;
             String URL;
             try {
-                int a = msg.indexOf("[");
+//                int a = msg.indexOf("[");
+                int a = msg.indexOf("http");
                 role = msg.substring(9, a - 1);
-                img = msg.substring(a + 15, msg.length() - 1).concat(".cqimg");
+                URL = msg.substring(a);
+//                img = msg.substring(a + 15, msg.length() - 1).concat(".cqimg");
             } catch (IndexOutOfBoundsException e) {
                 paramError(e);
                 return;
             }
-            logger.info("接受到图片信息，开始解析URL");
-            File file = new File(rb.getString("path")+"\\data\\image\\"+img);
-            try (FileReader fr = new FileReader(file)) {
-                char[] all = new char[(int) file.length()];
-                // 以字符流的形式读取文件所有内容
-                fr.read(all);
-                //这里应该用String的构造器而不是Arrays.toString
-                URL = new String(all).substring(new String(all).indexOf("https"),new String(all).indexOf("addtime")-2);
-            } catch (IOException e) {
-                paramError(e);
-                return;
-            }
+//            logger.info("接受到图片信息，开始解析URL");
+//            File file = new File(rb.getString("path")+"\\data\\image\\"+img);
+//            try (FileReader fr = new FileReader(file)) {
+//                char[] all = new char[(int) file.length()];
+//                // 以字符流的形式读取文件所有内容
+//                fr.read(all);
+//                //这里应该用String的构造器而不是Arrays.toString
+//                URL = new String(all).substring(new String(all).indexOf("https"),new String(all).indexOf("addtime")-2);
+//            } catch (IOException e) {
+//                paramError(e);
+//                return;
+//            }
             try {
                 logger.info("开始根据URL下载新背景。");
                 bg= ImageIO.read(new URL(URL));
             } catch (IOException e) {
                 logger.error("根据URL下载背景图失败");
                 logger.error(e.getMessage());
-                sendMsg("从TX服务器获取该背景图失败。");
+                sendMsg("根据URL下载背景图失败");
+//                sendMsg("从TX服务器获取该背景图失败。");
                 return;
             }
             //并不需要删除旧图片

@@ -87,22 +87,16 @@ public class apiUtil {
         Type listType = new TypeToken<List<BP>>() {
         }.getType();
         List<BP> list = new Gson().fromJson(output, listType);
-        //判断当前时间在UTC下是否比晚上八点早，是就获取昨天的晚八点，否就获取当天的晚八点
+        //传入的是北京时间……
+
         Calendar c = Calendar.getInstance();
-        //我要取到UTC时间上一个晚上八点，那如果当前时间比20点早，上一个晚八点就是昨天的
-        //用HOUR会出现前一个getTIme为22:06也进if块
-        if(c.get(Calendar.HOUR_OF_DAY)<20) {
-            c.add(Calendar.DATE, -1);
-        }
-        //这里用HOUR会出现：在早上6点运行，处理后的c.getTime变成08:00:00的问题
-        c.set(Calendar.HOUR_OF_DAY, 20);
-        //整点
+        c.set(Calendar.HOUR_OF_DAY,4);
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
-        List<BP> result = new ArrayList<BP>();
+        List<BP> result = new ArrayList<>();
 
         for (BP aList : list) {
-            //对BP进行遍历，如果产生时间晚于当天凌晨4点(UTC时间昨晚八点)
+            //对BP进行遍历，如果产生时间晚于当天凌晨4点
             if (aList.getDate().after(c.getTime())) {
                 result.add(aList);
             }
@@ -118,6 +112,8 @@ public class apiUtil {
         //设置请求头
         httpConnection.setRequestMethod("GET");
         httpConnection.setRequestProperty("Accept", "application/json");
+        httpConnection.setConnectTimeout(1000);
+        httpConnection.setReadTimeout(1000);
         //如果ppy的泡面撒了
         if (httpConnection.getResponseCode() != 200) {
             throw new IOException("HTTP GET请求失败: "

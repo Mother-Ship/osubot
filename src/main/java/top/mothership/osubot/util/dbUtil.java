@@ -8,7 +8,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.TimeZone;
 
 
 public class dbUtil {
@@ -30,16 +29,16 @@ public class dbUtil {
     }
 
 
-    public String getUserRole(String userName){
+    public String getUserRole(String userName) {
         String querySql = "SELECT `role` FROM `username` WHERE username = ?";
         try (Connection c = getConnection();
              PreparedStatement queryPs = c.prepareStatement(querySql)) {
             queryPs.setString(1, userName);
             ResultSet rs = queryPs.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 return rs.getString("role");
-            }else{
-                logger.info("玩家"+userName+"在username表中没有记录");
+            } else {
+                logger.info("玩家" + userName + "在username表中没有记录");
                 return "notFound";
             }
         } catch (SQLException e) {
@@ -48,13 +47,14 @@ public class dbUtil {
             return "error";
         }
     }
+
     //为!褪裙功能使用
     public List<String> listUserInfoByRole(String role) {
         List<String> list = new ArrayList<>();
         String sql = "SELECT `username` FROM `username` WHERE `role` = ?";
         try (Connection c = getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1,role);
+            ps.setString(1, role);
             ResultSet rs = ps.executeQuery();
             //循环从结果集中取出用户名
             while (rs.next()) {
@@ -71,12 +71,12 @@ public class dbUtil {
 
     }
 
-    public int editUserRole(String username,String role){
+    public int editUserRole(String username, String role) {
         String sql = "UPDATE`username` SET `role` = ? WHERE username = ?";
         try (Connection c = getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1,role);
-            ps.setString(2,username);
+            ps.setString(1, role);
+            ps.setString(2, username);
             return ps.executeUpdate();
         } catch (SQLException e) {
             logger.error("更新玩家角色出错");
@@ -85,6 +85,7 @@ public class dbUtil {
         }
 
     }
+
     //有新查询的时候，将数据写入username表
     public int addUserName(String userName) {
 
@@ -124,6 +125,7 @@ public class dbUtil {
         }
 
     }
+
     //获得用户名对应的id
     public int getUserName(String userName) {
         String querySql = "SELECT `Id` FROM `username` WHERE username = ?";
@@ -131,10 +133,10 @@ public class dbUtil {
              PreparedStatement queryPs = c.prepareStatement(querySql)) {
             queryPs.setString(1, userName);
             ResultSet rs = queryPs.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 return rs.getInt("id");
-            }else{
-                logger.info("玩家"+userName+"在username表中没有记录");
+            } else {
+                logger.info("玩家" + userName + "在username表中没有记录");
                 return 0;
             }
         } catch (SQLException e) {
@@ -176,9 +178,9 @@ public class dbUtil {
             ps.setLong(10, user.getTotal_score());
             ps.setFloat(11, user.getLevel());
             ps.setInt(12, user.getPp_rank());
-            ps.setInt(13,user.getCount_rank_ss());
-            ps.setInt(14,user.getCount_rank_s());
-            ps.setInt(15,user.getCount_rank_a());
+            ps.setInt(13, user.getCount_rank_ss());
+            ps.setInt(14, user.getCount_rank_s());
+            ps.setInt(15, user.getCount_rank_a());
             return ps.executeUpdate();
         } catch (SQLException e) {
             logger.error("写入用户状态出错");
@@ -187,26 +189,34 @@ public class dbUtil {
         }
 
     }
-    public User getNearestUserInfo(String username ,int day){
+
+    public User getNearestUserInfo(String username, int day) {
         Calendar cl = Calendar.getInstance();
         cl.add(Calendar.DATE, -day);
         Date date = new Date(cl.getTimeInMillis());
         User user = new User();
         //根据距离给定日期的距离来排序
         String infosql = "SELECT * , abs(UNIX_TIMESTAMP(queryDate) - UNIX_TIMESTAMP(?)) AS ds FROM `userinfo`  WHERE `username` = ? ORDER BY ds ASC ";
+        String unameSql = "SELECT `username` FROM `username` WHERE Id = ?";
 
         try (Connection c = getConnection();
+             PreparedStatement unameps = c.prepareStatement(unameSql);
              PreparedStatement infoPs = c.prepareStatement(infosql)) {
-            infoPs.setDate(1,date);
+            infoPs.setDate(1, date);
             int i = getUserName(username);
             if (i == 0) {
                 //如果根据用户名查不出用户id
                 throw new SQLException("非法请求：没有使用过本机器人的玩家应该先调用getUserName查询");
             }
-            infoPs.setInt(2,i);
+            unameps.setInt(1, i);
+            ResultSet userRs = unameps.executeQuery();
+            userRs.next();
+            username = userRs.getString("username");
+            infoPs.setInt(2, i);
             ResultSet infoRs = infoPs.executeQuery();
             if (infoRs.next()) {
                 //根据列名来组装user不容易出错
+                //得想办法，返还回去的不能是给进来的用户名
                 user.setUsername(username);
                 user.setUser_id(infoRs.getInt("user_id"));
                 user.setCount300(infoRs.getInt("count300"));
@@ -223,11 +233,11 @@ public class dbUtil {
                 user.setCount_rank_s(infoRs.getInt("count_rank_s"));
                 user.setCount_rank_a(infoRs.getInt("count_rank_a"));
                 user.setQueryDate(infoRs.getDate("queryDate"));
-                logger.info("查询到玩家"+username+"最接近于"+new Date(cl.getTimeInMillis()).toString()
-                        +"的位于"+infoRs.getDate("queryDate").toString()+"的记录");
+                logger.info("查询到玩家" + username + "最接近于" + new Date(cl.getTimeInMillis()).toString()
+                        + "的位于" + infoRs.getDate("queryDate").toString() + "的记录");
                 return user;
-            }else{
-                logger.info("没有查询到玩家"+username+"最接近于"+new Date(cl.getTimeInMillis()).toString()+"的记录");
+            } else {
+                logger.info("没有查询到玩家" + username + "最接近于" + new Date(cl.getTimeInMillis()).toString() + "的记录");
                 return null;
             }
         } catch (SQLException e) {
@@ -250,22 +260,29 @@ public class dbUtil {
         cl.add(Calendar.DATE, -day);
         //在这里进行处理，如果UTC时间是20-24的时候，进行当前日期+1的操作
         //北京时间凌晨4点-8点的查询，进入程序会被认为是前一天的查询，需要修正
-        if(20<cl.get(Calendar.HOUR_OF_DAY)&&cl.get(Calendar.HOUR_OF_DAY)<24){
+        if (20 < cl.get(Calendar.HOUR_OF_DAY) && cl.get(Calendar.HOUR_OF_DAY) < 24) {
             cl.add(Calendar.DATE, 1);
         }
 
         User user = new User();
         String infosql = "SELECT * FROM `userinfo` WHERE `username` = ? AND `queryDate` = ?";
+        String unameSql = "SELECT `username` FROM `username` WHERE Id = ?";
         try (Connection c = getConnection();
-             PreparedStatement infoPs = c.prepareStatement(infosql);) {
+             PreparedStatement unameps = c.prepareStatement(unameSql);
+             PreparedStatement infoPs = c.prepareStatement(infosql)) {
             //把参数转化为date对象由调用者完成，这里直接传入数据库
             int i = getUserName(username);
             if (i == 0) {
                 //如果根据用户名查不出用户id
                 throw new SQLException("非法请求：没有使用过本机器人的玩家应该先调用getUserName查询");
             }
-            infoPs.setInt(1,i);
-            infoPs.setDate(2,new Date(cl.getTimeInMillis()));
+            unameps.setInt(1, i);
+            ResultSet userRs = unameps.executeQuery();
+            //必须调用.next移动指针
+            userRs.next();
+            username = userRs.getString("username");
+            infoPs.setInt(1, i);
+            infoPs.setDate(2, new Date(cl.getTimeInMillis()));
             ResultSet infoRs = infoPs.executeQuery();
             if (infoRs.next()) {
                 //根据列名来组装user不容易出错
@@ -285,8 +302,8 @@ public class dbUtil {
                 user.setCount_rank_s(infoRs.getInt("count_rank_s"));
                 user.setCount_rank_a(infoRs.getInt("count_rank_a"));
                 return user;
-            }else{
-                logger.info("没有查询到玩家"+username+"在"+new Date(cl.getTimeInMillis()).toString()+"的记录");
+            } else {
+                logger.info("没有查询到玩家" + username + "在" + new Date(cl.getTimeInMillis()).toString() + "的记录");
                 return null;
             }
         } catch (SQLException e) {
@@ -294,10 +311,23 @@ public class dbUtil {
             logger.error(e.getMessage());
             return null;
         }
-
-
-
-
     }
 
+    public void clearTodayData() {
+        //由于凌晨4点录入数据时，所有合法的数据是上一批凌晨4点，也就是数据库中记载着昨天的记录。那么我只需要删掉今天的记录就行了。
+        Calendar cl = Calendar.getInstance();
+        String sql = "DELETE * FROM `userinfo` WHERE `queryDate` = ?";
+        logger.info("正在清除当日临时数据");
+        try (Connection c = getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setDate(1, new Date(cl.getTimeInMillis()));
+            ps.execute();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }
+
+

@@ -12,7 +12,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.Buffer;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -42,14 +41,15 @@ public class imgUtil {
         g2.drawString(text, Integer.decode(rb.getString(x)), Integer.decode(rb.getString(y)));
 
     }
-    public String convertMOD(Integer bp){
+
+    public String convertMOD(Integer bp) {
         String modBin = Integer.toBinaryString(bp);
         //反转mod
-        modBin =  new StringBuffer(modBin).reverse().toString();
+        modBin = new StringBuffer(modBin).reverse().toString();
         List<String> mods = new ArrayList<>();
         char[] c = modBin.toCharArray();
-        for(int i=c.length-1;i>=0;i--){
-            if(c[i]=='1'){
+        for (int i = c.length - 1; i >= 0; i--) {
+            if (c[i] == '1') {
                 //字符串中第i个字符是1,意味着第i+1个mod被开启了
                 switch (i) {
                     case 0:
@@ -89,7 +89,7 @@ public class imgUtil {
 
             }
         }
-        return mods.toString().substring(1,mods.toString().length());
+        return mods.toString().substring(1, mods.toString().length());
     }
 
     public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
@@ -225,16 +225,15 @@ public class imgUtil {
                 //临时关闭平滑
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
                 //只有day>1才会出现文字
-                draw(g2, "tipColor", "tipFont", "tipSize", "#" + userFromAPI.getPp_raw().toString(), "ppx", "ppy");
                 if (near) {
                     //如果取到的是模糊数据,输出具体日期
-                    draw(g2, "tipColor", "tipFont", "tipSize", "#" + "请求的日期没有数据", "tipx", "tipy");
+                    draw(g2, "tipColor", "tipFont", "tipSize",  "请求的日期没有数据", "tipx", "tipy");
                     //算出天数差别然后加一天
-                    draw(g2, "tipColor", "tipFont", "tipSize", "#" + "『对比于" + Long.valueOf(((Calendar.getInstance().getTime().getTime() -
+                    draw(g2, "tipColor", "tipFont", "tipSize",  "『对比于" + Long.valueOf(((Calendar.getInstance().getTime().getTime() -
                             userInDB.getQueryDate().getTime()) / 1000 / 60 / 60 / 24) + 1).toString() + "天前』", "tip2x", "tip2y");
                 } else {
                     //如果取到的是精确数据
-                    draw(g2, "tipColor", "tipFont", "tipSize", "#" + "『对比于" + day + "天前』", "tip2x", "tip2y");
+                    draw(g2, "tipColor", "tipFont", "tipSize", "『对比于" + day + "天前』", "tip2x", "tip2y");
                 }
 
             }
@@ -377,6 +376,7 @@ public class imgUtil {
 
     public String drawUserBP(User user, List<BP> list) {
         //思路：获取list的大小，把每个list成员的.getbeatmapName信息绘制到图片上
+        logger.info("开始绘制"+user.getUsername()+"的今日BP信息");
         BufferedImage bpTop;
         BufferedImage A;
         BufferedImage B;
@@ -398,14 +398,14 @@ public class imgUtil {
         try {
             //使用guava的类读取路径
             bpTop = ImageIO.read(new File(Resources.getResource(rb.getString("bptop")).toURI()));
-            A=ImageIO.read(new File(Resources.getResource(rb.getString("A")).toURI()));
-            B=ImageIO.read(new File(Resources.getResource(rb.getString("B")).toURI()));
-            C=ImageIO.read(new File(Resources.getResource(rb.getString("C")).toURI()));
-            D=ImageIO.read(new File(Resources.getResource(rb.getString("D")).toURI()));
-            X=ImageIO.read(new File(Resources.getResource(rb.getString("X")).toURI()));
-            XH=ImageIO.read(new File(Resources.getResource(rb.getString("XH")).toURI()));
-            S=ImageIO.read(new File(Resources.getResource(rb.getString("S")).toURI()));
-            SH=ImageIO.read(new File(Resources.getResource(rb.getString("SH")).toURI()));
+            A = ImageIO.read(new File(Resources.getResource(rb.getString("A")).toURI()));
+            B = ImageIO.read(new File(Resources.getResource(rb.getString("B")).toURI()));
+            C = ImageIO.read(new File(Resources.getResource(rb.getString("C")).toURI()));
+            D = ImageIO.read(new File(Resources.getResource(rb.getString("D")).toURI()));
+            X = ImageIO.read(new File(Resources.getResource(rb.getString("X")).toURI()));
+            XH = ImageIO.read(new File(Resources.getResource(rb.getString("XH")).toURI()));
+            S = ImageIO.read(new File(Resources.getResource(rb.getString("S")).toURI()));
+            SH = ImageIO.read(new File(Resources.getResource(rb.getString("SH")).toURI()));
             for (int i = 0; i < list.size(); i++) {
                 //准备好和BP数量相同的List
                 if (list.get(i).getBeatmap_name().length() < Integer.valueOf(rb.getString("bplimit"))) {
@@ -428,14 +428,15 @@ public class imgUtil {
             logger.error(e.getMessage());
             return "error";
         }
+        logger.info("载入背景、rank小图标完成");
         //规划出结果图的尺寸(2行BP数量*2行BP图高度+3行BP数量*3行BP高度)
-        BufferedImage result = new BufferedImage(width, bpMid2Height*bp2.size()+bpMid3Height*bp3.size(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage result = new BufferedImage(width, bpMid2Height * (1+bp2.size()) + bpMid3Height * +bp3.size(), BufferedImage.TYPE_INT_RGB);
 
 
         //在头部图片上绘制用户名
         Graphics2D g2 = (Graphics2D) bpTop.getGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        draw(g2,"bpUnameColor","bpUnameFont","bpUnameSize",user.getUsername(),"bpUnamex","bpUnamey");
+        draw(g2, "bpUnameColor", "bpUnameFont", "bpUnameSize", user.getUsername()+"'s Today BP", "bpUnamex", "bpUnamey");
         g2.dispose();
         //将头部图片转换为数组
         int[] ImageArrayTop = new int[width * bpTopHeight];
@@ -446,15 +447,15 @@ public class imgUtil {
 
         for (int i = 0; i < bp2.size(); i++) {
             String mods;
-            if(bp2.get(i).getEnabled_mods()>0){
+            if (bp2.get(i).getEnabled_mods() > 0) {
                 mods = convertMOD(bp2.get(i).getEnabled_mods());
-            }else{
+            } else {
                 mods = "None";
             }
             //准备将字符串写入图片
             Graphics2D g = (Graphics2D) bpmids2.get(i).getGraphics();
             //绘制小图
-            switch (bp2.get(i).getRank()){
+            switch (bp2.get(i).getRank()) {
                 case "A":
                     g.drawImage(A, Integer.decode(rb.getString("bp2Rankx")), Integer.decode(rb.getString("bp2Ranky")), null);
                     break;
@@ -485,33 +486,34 @@ public class imgUtil {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             //开始绘制谱面名称，因为是二行的数据所以不需要分割
             draw(g, "bpNameColor", "bpNameFont", "bpNameSize",
-                    bp2.get(i).getBeatmap_name()+"("+ new DecimalFormat("###.00").format(100.0 * (6*bp2.get(i).getCount300() + 2*bp2.get(i).getCount100() + bp2.get(i).getCount50()) / (6*(bp2.get(i).getCount50() + bp2.get(i).getCount100() + bp2.get(i).getCount300() + bp2.get(i).getCountmiss())))+"%)", "bp2Namex", "bp2Namey");
-            //绘制日期(强转北京时间)
+                    bp2.get(i).getBeatmap_name() + "(" + new DecimalFormat("###.00").format(100.0 * (6 * bp2.get(i).getCount300() + 2 * bp2.get(i).getCount100() + bp2.get(i).getCount50()) / (6 * (bp2.get(i).getCount50() + bp2.get(i).getCount100() + bp2.get(i).getCount300() + bp2.get(i).getCountmiss()))) + "%)", "bp2Namex", "bp2Namey");
+            //绘制日期(给的就是北京时间，不转)
             draw(g, "bpDateColor", "bpDateFont", "bpDateSize",
-                    new SimpleDateFormat("MM-dd HH:mm").format(bp2.get(i).getDate().getTime()+1000*60*60*8), "bp2Datex", "bp2Datey");
+                    new SimpleDateFormat("MM-dd HH:mm").format(bp2.get(i).getDate().getTime()), "bp2Datex", "bp2Datey");
             //绘制MOD
-            draw(g,"bpModColor","bpModFont","bpModSize",mods,"bpModx" ,"bpMody");
+            draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp2Modx", "bp2Mody");
             //绘制PP
-            draw(g,"bpPPColor","bpPPFont","bpPPSize",Integer.toString(Math.round(bp2.get(i).getPp())),"bp2PPx","bp2PPy");
+            draw(g, "bpPPColor", "bpPPFont", "bpPPSize", Integer.toString(Math.round(bp2.get(i).getPp()))+"pp", "bp2PPx", "bp2PPy");
             g.dispose();
             //将它变成数组
             int[] ImageArray = new int[width * bpMid2Height];
             ImageArray = bpmids2.get(i).getRGB(0, 0, width, bpMid2Height, ImageArray, 0, width);
             //横坐标是0，纵坐标是i+1*每个格子的高度，大小是每个格子的宽高
             result.setRGB(0, bpMid2Height * (i + 1), width, bpMid2Height, ImageArray, 0, width);//将数组写入缓冲图片
+            logger.info("绘制"+bp2.get(i).getBeatmap_name()+"完成");
         }
-
+        logger.info("无需使用大背景的BP绘制完成");
         for (int i = 0; i < bp3.size(); i++) {
             String mods;
-            if(bp3.get(i).getEnabled_mods()>0){
+            if (bp3.get(i).getEnabled_mods() > 0) {
                 mods = convertMOD(bp3.get(i).getEnabled_mods());
-            }else{
+            } else {
                 mods = "None";
             }
             //准备将字符串写入图片
             Graphics2D g = (Graphics2D) bpmids3.get(i).getGraphics();
             //绘制小图
-            switch (bp3.get(i).getRank()){
+            switch (bp3.get(i).getRank()) {
                 case "A":
                     g.drawImage(A, Integer.decode(rb.getString("bp3Rankx")), Integer.decode(rb.getString("bp3Ranky")), null);
                     break;
@@ -540,27 +542,29 @@ public class imgUtil {
 
             //开启平滑
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            //开始绘制谱面名称，因为是二行的数据所以不需要分割
-            draw(g, "bpNameColor", "bpNameFont", "bpNameSize",
-                    bp3.get(i).getBeatmap_name()+"("+ new DecimalFormat("###.00").format(100.0 * (6*bp3.get(i).getCount300() + 2*bp3.get(i).getCount100() + bp3.get(i).getCount50()) / (6*(bp3.get(i).getCount50() + bp3.get(i).getCount100() + bp3.get(i).getCount300() + bp3.get(i).getCountmiss())))+"%)", "bp3Namex", "bp3Namey");
-            //绘制日期(强转北京时间)
+            //开始绘制谱面名称，三行BP需要分割字符串
+            //取80个字符中的最后一个空格
+            draw(g, "bpNameColor", "bpNameFont", "bpNameSize", bp3.get(i).getBeatmap_name().substring(0, bp3.get(i).getBeatmap_name().substring(0, Integer.valueOf(rb.getString("bplimit"))+1).lastIndexOf(" ") + 1),
+            "bp3Namex", "bp3Namey");
+            //第二行
+            draw(g, "bpNameColor", "bpNameFont", "bpNameSize", bp3.get(i).getBeatmap_name().substring(bp3.get(i).getBeatmap_name().substring(0, Integer.valueOf(rb.getString("bplimit"))+1).lastIndexOf(" ") + 1, bp3.get(i).getBeatmap_name().length())
+                            + "(" + new DecimalFormat("###.00").format(100.0 * (6 * bp3.get(i).getCount300() + 2 * bp3.get(i).getCount100() + bp3.get(i).getCount50()) / (6 * (bp3.get(i).getCount50() + bp3.get(i).getCount100() + bp3.get(i).getCount300() + bp3.get(i).getCountmiss()))) + "%)",
+                    "bp3Name+1x", "bp3Name+1y");
+            //绘制日期(给的就是北京时间，不转)
             draw(g, "bpDateColor", "bpDateFont", "bpDateSize",
-                    new SimpleDateFormat("MM-dd HH:mm").format(bp3.get(i).getDate().getTime()+1000*60*60*8), "bp3Datex", "bp3Datey");
+                    new SimpleDateFormat("MM-dd HH:mm").format(bp3.get(i).getDate().getTime()), "bp3Datex", "bp3Datey");
             //绘制MOD
-            draw(g,"bpModColor","bpModFont","bpModSize",mods,"bpModx" ,"bpMody");
+            draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp3Modx", "bp3Mody");
             //绘制PP
-            draw(g,"bpPPColor","bpPPFont","bpPPSize",Integer.toString(Math.round(bp2.get(i).getPp())),"bp3PPx","bp3PPy");
+            draw(g, "bpPPColor", "bpPPFont", "bpPPSize", Integer.toString(Math.round(bp3.get(i).getPp()))+"pp", "bp3PPx", "bp3PPy");
             g.dispose();
             //将它变成数组
-            int[] ImageArray = new int[width * bpMid2Height];
-            ImageArray = bpmids2.get(i).getRGB(0, 0, width, bpMid2Height, ImageArray, 0, width);
-            //横坐标是0，纵坐标是i+1*每个格子的高度，大小是每个格子的宽高
-            result.setRGB(0, bpMid2Height * (i + 1), width, bpMid2Height, ImageArray, 0, width);//将数组写入缓冲图片
+            int[] ImageArray = new int[width * bpMid3Height];
+            ImageArray = bpmids3.get(i).getRGB(0, 0, width, bpMid3Height, ImageArray, 0, width);
+            //横坐标是0，纵坐标是i*每个格子的高度（没有头图不用+1），还要加上bp2占用的高度+1（头图。+1在这里），大小是每个格子的宽高
+            result.setRGB(0, bpMid3Height * (i) + bpMid2Height * (bp2.size()+1), width, bpMid3Height, ImageArray, 0, width);
+            logger.info("绘制"+bp3.get(i).getBeatmap_name()+"完成");
         }
-
-
-
-
         //生成新图片
         try {
             ImageIO.write(result, "png", new File(rb.getString("path") + "\\data\\image\\" + user.getUser_id() + ".png"));

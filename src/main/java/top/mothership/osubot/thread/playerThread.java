@@ -1,6 +1,5 @@
 package top.mothership.osubot.thread;
 
-import com.google.gson.JsonSyntaxException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
@@ -14,7 +13,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -157,6 +155,7 @@ public class playerThread extends Thread {
             //代码复用性还是低了点，如果以后再加功能考虑重构
             //调用getNearestUserInfo方法，查询数据库中是否有该用户名的记录
             if (dbUtil.getUserName(username) != 0) {
+
                 user = dbUtil.getNearestUserInfo(username, 1);
             } else {
                 //是个没用过白菜的人呢
@@ -182,6 +181,7 @@ public class playerThread extends Thread {
 
 
             try {
+                logger.info("开始获取玩家" + user.getUsername() + "的今日BP");
                 list = apiUtil.getTodayBP(user.getUsername());
                 if (list.size() == 0) {
                     sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
@@ -189,6 +189,7 @@ public class playerThread extends Thread {
                 }
             } catch (IOException e) {
                 logger.error("从api获取玩家" + user.getUsername() + "今日BP信息失败");
+                sendGroupMsg("从api获取玩家" + user.getUsername() + "今日BP信息失败");
                 logger.error(e.getMessage());
                 logger.info("线程" + this.getName() + "处理完毕，已经退出");
                 return;
@@ -198,14 +199,24 @@ public class playerThread extends Thread {
             //保证list不为空
             for (BP aList : list) {
                 //对BP进行遍历，请求API将名称写入
-                String name;
-                try {
-                    logger.info("正在获取Beatmap id为" +aList.getBeatmap_id()+"的谱面的名称");
-                    name = apiUtil.getMapName(aList.getBeatmap_id());
-                } catch (IOException e) {
+                String name = null;
+                int retry = 0;
+                while (retry < 5) {
+                    try {
+                        logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
+                        name = apiUtil.getMapName(aList.getBeatmap_id());
+                        //如果成功就跳出循环
+                        break;
+                    } catch (IOException e) {
+                        logger.error("从api获取谱面" + aList.getBeatmap_id() + "的名称失败");
+                        logger.error(e.getMessage());
+                        logger.error("开始重试，第" + (retry + 1) + "次");
+                        retry++;
+                    }
+                }
+                if (retry == 5) {
                     logger.error("从api获取谱面" + aList.getBeatmap_id() + "的名称失败");
-                    logger.error(e.getMessage());
-                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                    sendGroupMsg("从api获取谱面" + aList.getBeatmap_id() + "的名称失败");
                     return;
                 }
                 aList.setBeatmap_name(name);
