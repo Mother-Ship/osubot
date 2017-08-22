@@ -15,7 +15,7 @@
 ------
 1. 安装MySQL，JRE。（目前数据库名称和密码写死为root:123456，如果有需求可以修改为读取properties）
 2. 安装酷Q及Lemoc插件，打开Lemoc的WebSocket服务器。
-2. git clone本项目，在酷Q目录\data\image\下创建resource文件夹，将项目的resource文件夹下的所有图片（除了XML和.proprties之外应该都是图片）剪切过去。
+2. git clone本项目，在酷Q目录\data\image\下创建resource文件夹，将项目中resources文件夹下的resource.zip解压过去。
 3. 根据需求修改配置/源码（当前布局和坐标一一对应，但是可以完全自由调节，如果设计了新布局）
 4. 默认使用mvn assembly:assembly命令（我在pom中指定了maven使用这个插件）打jar包。
 
