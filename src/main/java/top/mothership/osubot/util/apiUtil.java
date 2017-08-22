@@ -50,19 +50,19 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         String output = null;
         int retry = 0;
-        while (retry < 5) {
+        while (retry < 10) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(URL).openConnection();
                 httpConnection.setRequestMethod("GET");
                 httpConnection.setRequestProperty("Accept", "application/json");
+                httpConnection.setConnectTimeout(2000);
+                httpConnection.setReadTimeout(2000);
                 if (httpConnection.getResponseCode() != 200) {
-                    logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + retry + 1 + "次");
+                    logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
                     continue;
                 }
-
-
                 //读取返回结果
                 BufferedReader responseBuffer =
                         new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
@@ -72,13 +72,13 @@ public class apiUtil {
                 responseBuffer.close();
                 break;
             } catch (IOException e) {
-                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + retry + 1 + "次");
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
                 retry++;
             }
 
         }
-        if (retry == 5) {
-            logger.error("玩家" + userId + "请求API获取数据，失败五次");
+        if (retry == 10) {
+            logger.error("玩家" + userId + "请求API获取数据失败，已重试10次");
             return null;
         }
         //去掉两侧的中括号
@@ -101,7 +101,7 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         List<BP> list = null;
         int retry = 0;
-        while (retry < 5) {
+        while (retry < 10) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(URL).openConnection();
@@ -111,7 +111,7 @@ public class apiUtil {
                 httpConnection.setConnectTimeout(2000);
                 httpConnection.setReadTimeout(2000);
                 if (httpConnection.getResponseCode() != 200) {
-                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + retry + 1 + "次");
+                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
                     continue;
                 }
@@ -134,12 +134,12 @@ public class apiUtil {
                 list = new Gson().fromJson(output, listType);
                 break;
             } catch (IOException e) {
-                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + retry + 1 + "次");
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
                 retry++;
             }
         }
-        if (retry == 5) {
-            logger.error("玩家" + username + "请求API获取BP，失败五次");
+        if (retry == 10) {
+            logger.error("玩家" + username + "请求API获取BP失败，已重试10次");
             return null;
         }
         //传入的是北京时间……
@@ -165,7 +165,7 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         String output = null;
         int retry = 0;
-        while (retry < 5) {
+        while (retry < 10) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(getMapURL + "?k=" + key + "&b=" + bid).openConnection();
@@ -176,7 +176,7 @@ public class apiUtil {
                 httpConnection.setReadTimeout(1000);
                 //如果ppy的泡面撒了
                 if (httpConnection.getResponseCode() != 200) {
-                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + retry + 1 + "次");
+                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
                     continue;
                 }
@@ -191,12 +191,12 @@ public class apiUtil {
                 output = output.substring(1, output.length() - 1);
                 break;
             } catch (IOException e) {
-                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + retry + 1 + "次");
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
                 retry++;
             }
         }
-        if (retry == 5) {
-            logger.error("谱面" + bid + "的名称获取失败");
+        if (retry == 10) {
+            logger.error("谱面" + bid + "的名称获取失败，已重试10次");
             return null;
         }
 

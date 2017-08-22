@@ -187,6 +187,7 @@ public class adminThread extends Thread {
                 paramError(e);
                 return;
             }
+            logger.info("开始获取玩家"+username+"的用户组");
             User user = apiUtil.getUser(username,0);
             int userid = user.getUser_id();
 
