@@ -206,17 +206,16 @@ public class imgUtil {
         //绘制A计数
         draw(g2, "defaultColor", "numberFont", "countSize", Integer.toString(userFromAPI.getCount_rank_a()), "aCountx", "aCounty");
         //绘制当时请求的时间
-        //拿到当前时间对应的北京时间
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+
         draw(g2, "timeColor", "timeFont", "timeSize",
                 new SimpleDateFormat("yy-MM-dd HH:mm:ss").format(Calendar.getInstance().getTime()), "timex", "timey");
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+
 
         //---------------------------以上绘制在线部分完成--------------------------------
         //试图查询数据库中指定日期的user
         if (day > 0) {
                 /*
-                不带参数：day=1，调用dbUtil拿当天凌晨（UTC时间日期是昨天，同时也是昨天结束时候的成绩）的数据进行对比
+                不带参数：day=1，调用dbUtil拿当天凌晨（数据库中数值是昨天）的数据进行对比
                 带day = 0:进入本方法，不读数据库，不进行对比
                 day>1，例如day=2，21号进入本方法，查的是19号结束时候的成绩
                 */

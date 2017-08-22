@@ -24,17 +24,12 @@ public class entryJob extends TimerTask {
     @Override
     public void run() {
         logger.info("开始获取数据");
-        List<String> list = dbUtil.listUserName();
-        for (String aList : list) {
+        List<Integer> list = dbUtil.listUserId();
+        for (Integer aList : list) {
             User user = null;
             while (user == null) {
-                try {
                     //这里的user是保证官网存在的，所以可能的异常只有网络错误一种
-                    user = apiUtil.getUser(aList);
-                } catch (IOException e) {
-                    logger.error("从api获取玩家" + aList + "信息失败");
-                    logger.error(e.getMessage());
-                }
+                    user = apiUtil.getUser(null,aList);
                 try {
                     //停止500ms，避免触发API频繁操作
                     Thread.sleep(500);

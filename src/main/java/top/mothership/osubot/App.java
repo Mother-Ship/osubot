@@ -13,6 +13,7 @@ import top.mothership.osubot.thread.entryJob;
 import top.mothership.osubot.thread.playerThread;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Calendar;
@@ -39,16 +40,13 @@ public class App {
      */
 
     public static void main(String[] args) {
-        //入口处指定时区
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         logger.info("欢迎使用白菜1.0");
         Calendar c = Calendar.getInstance();
-        //现在想取到UTC时间下一个晚上八点，那如果当前时间比20点早，下一个晚八点是今天的，如果当前时间比20点晚，那就是明天的
-        if(c.get(Calendar.HOUR_OF_DAY)>=20) {
+        if(c.get(Calendar.HOUR_OF_DAY)>=4) {
             c.add(Calendar.DATE, 1);
         }
         //这里用HOUR会出现：在早上6点运行，处理后的c.getTime变成08:00:00的问题
-        c.set(Calendar.HOUR_OF_DAY, 20);
+        c.set(Calendar.HOUR_OF_DAY, 4);
         //整点
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
@@ -126,8 +124,10 @@ public class App {
                 }
 
                 public void onClose(int code, String reason, boolean b) {
-                    logger.info("你已经断开连接: " + getURI() + "; 错误代码: " + code + " " + reason);
+                    logger.warn("你已经断开连接: " + getURI() + "; 错误代码: " + code + "原因：" + reason);
                     connected = false;
+
+
                 }
 
                 public void onError(Exception e) {

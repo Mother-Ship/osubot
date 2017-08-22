@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -92,40 +93,30 @@ public class playerThread extends Thread {
                     username = msg.substring(8);
                 }
             }
-
-            User userFromAPI;
-
-            try {
-                logger.info("开始调用API查询" + username + "的信息");
-                userFromAPI = apiUtil.getUser(username);
-                //优化流程，在此处直接判断用户存不存在
+            logger.info("开始调用API查询" + username + "的信息");
+            User userFromAPI = apiUtil.getUser(username,0);
                 if (userFromAPI == null) {
                     sendGroupMsg("没有在官网查到这个玩家。");
-                    throw new IOException("没有这个玩家");
+                    return;
                 }
-            } catch (IOException e) {
-                logger.error("从api获取玩家" + username + "信息失败");
-                logger.error(e.getMessage());
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                return;
-            }
 
-            if (dbUtil.getUserName(userFromAPI.getUsername()) == 0) {
+
+            if (dbUtil.getUserRole(userFromAPI.getUser_id()).equals("notFound")) {
+                //是个没用过白菜的人呢
                 //玩家初次使用本机器人，直接在数据库登记当天数据
-                logger.info("玩家" + userFromAPI.getUsername() + "初次使用本机器人，开始登记");
-                dbUtil.addUserName(userFromAPI.getUsername());
+                logger.info("玩家" + username + "初次使用本机器人，开始登记");
+                dbUtil.addUserId(userFromAPI.getUser_id());
                 dbUtil.addUserInfo(userFromAPI);
-
             }
 
             boolean near = false;
-            User userInDB = dbUtil.getUserInfo(username, day);
+            User userInDB = dbUtil.getUserInfo(userFromAPI.getUser_id(), day);
             if (userInDB == null) {
                 //如果第一次没取到
-                userInDB = dbUtil.getNearestUserInfo(username, day);
+                userInDB = dbUtil.getNearestUserInfo(userFromAPI.getUser_id(), day);
                 near = true;
             }
-            String role = dbUtil.getUserRole(username);
+            String role = dbUtil.getUserRole(userFromAPI.getUser_id());
 
             String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
             if (filename.equals("error")) {
@@ -134,7 +125,6 @@ public class playerThread extends Thread {
             //由于带[]的玩家，生成的文件名会导致返回出错，直接在imgUtil改为用数字id生成文件
             sendGroupMsg("[CQ:image,file=" + filename + "]");
             try {
-                logger.info("线程暂停两秒，以免发送成功前删除文件");
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -143,81 +133,39 @@ public class playerThread extends Thread {
             File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
             f.delete();
 
-
         }
 
 
         if ("bp".equals(msg.substring(1, 3))) {
             String username = msg.substring(4);
             logger.info("接收到玩家" + username + "的BP查询请求");
-            List<BP> list;
-            User user;
-            //代码复用性还是低了点，如果以后再加功能考虑重构
-            //调用getNearestUserInfo方法，查询数据库中是否有该用户名的记录
-            if (dbUtil.getUserName(username) != 0) {
 
-                user = dbUtil.getNearestUserInfo(username, 1);
-            } else {
-                //是个没用过白菜的人呢
-                try {
-                    user = apiUtil.getUser(username);
-                    if (user == null) {
-                        sendGroupMsg("没有在官网查到这个玩家。");
-                        throw new IOException("没有这个玩家");
-                    }
-                } catch (IOException e) {
-                    logger.error("从api获取玩家" + username + "信息失败");
-                    logger.error(e.getMessage());
-                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            User user = apiUtil.getUser(username,0);
+                if (user == null) {
+                    sendGroupMsg("没有在官网查到这个玩家。");
                     return;
                 }
+
+            if (dbUtil.getUserRole(user.getUser_id()).equals("notFound")) {
+                //是个没用过白菜的人呢
                 //玩家初次使用本机器人，直接在数据库登记当天数据
                 logger.info("玩家" + username + "初次使用本机器人，开始登记");
-                dbUtil.addUserName(username);
+                dbUtil.addUserId(user.getUser_id());
                 dbUtil.addUserInfo(user);
-
-
             }
 
 
-            try {
-                logger.info("开始获取玩家" + user.getUsername() + "的今日BP");
-                list = apiUtil.getTodayBP(user.getUsername());
-                if (list.size() == 0) {
-                    sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
-                    throw new IOException("没有查到该玩家今天更新的BP");
-                }
-            } catch (IOException e) {
-                logger.error("从api获取玩家" + user.getUsername() + "今日BP信息失败");
-                logger.error(e.getMessage());
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                return;
-            }
+                    logger.info("开始获取玩家" + user.getUsername() + "的今日BP");
+                    List<BP> list  = apiUtil.getTodayBP(user.getUsername(),0);
+                    if (list.size() == 0) {
+                        sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
+                        logger.info("没有查到该玩家今天更新的BP");
+                    }
 
-
-            //保证list不为空
             for (BP aList : list) {
                 //对BP进行遍历，请求API将名称写入
-                String name = null;
-                int retry = 0;
-                while (retry < 5) {
-                    try {
-                        logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
-                        name = apiUtil.getMapName(aList.getBeatmap_id());
-                        //如果成功就跳出循环
-                        break;
-                    } catch (IOException e) {
-                        logger.error("从api获取谱面" + aList.getBeatmap_id() + "的名称失败");
-                        logger.error(e.getMessage());
-                        logger.error("开始重试，第" + (retry + 1) + "次");
-                        retry++;
-                    }
-                }
-                if (retry == 5) {
-                    logger.error("从api获取谱面" + aList.getBeatmap_id() + "的名称失败");
-                    sendGroupMsg("从api获取谱面" + aList.getBeatmap_id() + "的名称失败");
-                    return;
-                }
+                logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
+                String name = apiUtil.getMapName(aList.getBeatmap_id());
                 aList.setBeatmap_name(name);
             }
             logger.info("正在绘制今日BP");

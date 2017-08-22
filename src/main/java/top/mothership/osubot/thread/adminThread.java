@@ -121,40 +121,19 @@ public class adminThread extends Thread {
                 role = "creep";
             }
             logger.info("分隔字符串完成，用户：" + Arrays.toString(usernames) + "，用户组：" + role);
-            List<String> errorList = new ArrayList<>();
             List<String> nullList = new ArrayList<>();
             List<String> doneList = new ArrayList<>();
             List<String> addList = new ArrayList<>();
             String img = null;
             for (int i = 0; i < usernames.length; i++) {
-                User user = null;
-                int retry = 0;
-                while (retry < 3) {
-                    //用网上抄来的retry机制
-                    try {
-                        logger.info("开始从API获取" + usernames[i] + "的信息");
-                        user = apiUtil.getUser(usernames[i]);
-                        //如果成功就跳出循环
-                        break;
-                    } catch (IOException e) {
-                        logger.error("从api获取玩家" + usernames[i] + "信息失败");
-                        logger.error(e.getMessage());
-                        logger.error("开始重试，第" + (retry + 1) + "次");
-                        //如果失败就计数器+1
-                        retry++;
-                    }
-                }
-                if (retry == 3) {
-                    logger.error("玩家" + usernames[i] + "重试三次失败，已记录并跳出本次for循环");
-                    errorList.add(usernames[i]);
-                    break;
-                }
+                logger.info("开始从API获取" + usernames[i] + "的信息");
+                User user = apiUtil.getUser(usernames[i],0);
                 //如果user不是空的(官网存在记录)
                 if (user != null) {
-                    //查找username数据库
-                    if (dbUtil.getUserName(user.getUsername()) == 0) {
-                        //如果username库中没有这个用户
-                        dbUtil.addUserName(user.getUsername());
+                    //查找userRole数据库
+                    if (dbUtil.getUserRole(user.getUser_id()).equals("notFound")) {
+                        //如果userRole库中没有这个用户
+                        dbUtil.addUserId(user.getUser_id());
                         dbUtil.addUserInfo(user);
                         logger.info("将用户" + user.getUsername() + "添加到数据库。");
                         if (usernames.length == 1) {
@@ -165,8 +144,7 @@ public class adminThread extends Thread {
                     } else {
                         doneList.add(user.getUsername());
                     }
-                    dbUtil.editUserRole(user.getUsername(), role);
-
+                    dbUtil.editUserRole(user.getUser_id(), role);
                 } else {
                     nullList.add(usernames[i]);
                 }
@@ -190,9 +168,6 @@ public class adminThread extends Thread {
             if (nullList.size() > 0) {
                 resp = resp.concat("\\n不存在的：" + nullList.toString());
             }
-            if (errorList.size() > 0) {
-                resp = resp.concat("\\n网络错误：" + errorList.toString());
-            }
             if (usernames.length == 0) {
                 resp = "没有做出改动。";
             }
@@ -212,9 +187,11 @@ public class adminThread extends Thread {
                 paramError(e);
                 return;
             }
+            User user = apiUtil.getUser(username,0);
+            int userid = user.getUser_id();
 
-            if (dbUtil.getUserName(username) > 0) {
-                String role = dbUtil.getUserRole(username);
+            if (!dbUtil.getUserRole(userid).equals("notFound")) {
+                String role = dbUtil.getUserRole(userid);
                 logger.info("获取了玩家" + username + "的用户组" + role + "。");
                 sendMsg("玩家" + username + "的用户组" + "是" + role + "。");
             } else {
@@ -233,39 +210,18 @@ public class adminThread extends Thread {
                 paramError(e);
                 return;
             }
-            List<String> list = dbUtil.listUserInfoByRole(role);
+            List<Integer> list = dbUtil.listUserInfoByRole(role);
             List<String> overflowList = new ArrayList<>();
-            for (String aList : list) {
+            for (Integer aList : list) {
                 //拿到用户当天的数据
                 User user = dbUtil.getNearestUserInfo(aList, 1);
                 //如果PP超过了警戒线，请求API拿到最新PP
                 if (user.getPp_raw() > Integer.valueOf(rb.getString(role+"RiskPP"))) {
-                    user = null;
-                    int retry = 0;
-                    while (retry < 3) {
-                        //用网上抄来的retry机制
-                        try {
-                            logger.info("开始从API获取" + aList + "的信息");
-                            user = apiUtil.getUser(aList);
-                            //如果成功就跳出循环
-                            break;
-                        } catch (IOException e) {
-                            logger.error("从api获取玩家" + aList + "信息失败");
-                            logger.error(e.getMessage());
-                            logger.error("开始重试，第" + (retry + 1) + "次");
-                            //如果失败就计数器+1
-                            retry++;
-                        }
-                    }
-                    if (retry == 3) {
-                        logger.error("玩家" + aList + "重试三次失败，直接返回网络错误");
-                        sendMsg("网络错误。");
-                        return;
-                    }
-                    //这时候user不会空了，因为如果还是空就已经跳出去了
+                    logger.info("开始从API获取" + aList + "的信息");
+                    user = apiUtil.getUser(null,aList);
                     if (user.getPp_raw() > Integer.valueOf(rb.getString(role+"PP")) + 0.49) {
                         logger.info("玩家" + aList + "超限，已记录");
-                        overflowList.add(aList);
+                        overflowList.add(apiUtil.getUser(null,aList).getUsername());
                     } else {
                         logger.info("玩家" + aList + "没有超限");
                     }
@@ -295,6 +251,7 @@ public class adminThread extends Thread {
                 paramError(e);
                 return;
             }
+            //把收到图片后读取cqimg的注释掉，改为直接下载URL
 //            logger.info("接受到图片信息，开始解析URL");
 //            File file = new File(rb.getString("path")+"\\data\\image\\"+img);
 //            try (FileReader fr = new FileReader(file)) {
