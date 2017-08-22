@@ -189,7 +189,6 @@ public class playerThread extends Thread {
                 }
             } catch (IOException e) {
                 logger.error("从api获取玩家" + user.getUsername() + "今日BP信息失败");
-                sendGroupMsg("从api获取玩家" + user.getUsername() + "今日BP信息失败");
                 logger.error(e.getMessage());
                 logger.info("线程" + this.getName() + "处理完毕，已经退出");
                 return;

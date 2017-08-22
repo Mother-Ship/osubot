@@ -1,6 +1,5 @@
 package top.mothership.osubot.util;
 
-import com.google.common.io.Resources;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import top.mothership.osubot.pojo.BP;
@@ -100,8 +99,8 @@ public class imgUtil {
         BufferedImage resizedAva = null;
         try {
             //使用guava的类读取路径
-            layout = ImageIO.read(new File(Resources.getResource(rb.getString("userlayout")).toURI()));
-        } catch (IOException | URISyntaxException e) {
+            layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("userlayout")));
+        } catch (IOException e) {
             logger.error("读取布局图片失败");
             logger.error(e.getMessage());
             return "error";
@@ -112,10 +111,10 @@ public class imgUtil {
         } catch (IOException e) {
             //所有没有独立bg的都采用默认bg
             try {
-                bg = ImageIO.read(new File(Resources.getResource(rb.getString("defaultbg")).toURI()));
-            } catch (IOException | URISyntaxException e1) {
+                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("defaultbg")));
+            } catch (IOException e1) {
                 logger.error("读取背景图片失败");
-                logger.error(e.getMessage());
+                logger.error(e1.getMessage());
                 return "error";
             }
         }
@@ -397,25 +396,25 @@ public class imgUtil {
         int bpMid3Height = 0;
         try {
             //使用guava的类读取路径
-            bpTop = ImageIO.read(new File(Resources.getResource(rb.getString("bptop")).toURI()));
-            A = ImageIO.read(new File(Resources.getResource(rb.getString("A")).toURI()));
-            B = ImageIO.read(new File(Resources.getResource(rb.getString("B")).toURI()));
-            C = ImageIO.read(new File(Resources.getResource(rb.getString("C")).toURI()));
-            D = ImageIO.read(new File(Resources.getResource(rb.getString("D")).toURI()));
-            X = ImageIO.read(new File(Resources.getResource(rb.getString("X")).toURI()));
-            XH = ImageIO.read(new File(Resources.getResource(rb.getString("XH")).toURI()));
-            S = ImageIO.read(new File(Resources.getResource(rb.getString("S")).toURI()));
-            SH = ImageIO.read(new File(Resources.getResource(rb.getString("SH")).toURI()));
+            bpTop = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("bptop")));
+            A = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("A")));
+            B = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("B")));
+            C = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("C")));
+            D = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("D")));
+            X = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("X")));
+            XH = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("XH")));
+            S = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("S")));
+            SH = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("SH")));
             for (int i = 0; i < list.size(); i++) {
                 //准备好和BP数量相同的List
                 if (list.get(i).getBeatmap_name().length() < Integer.valueOf(rb.getString("bplimit"))) {
                     //根据谱面名称+难度的长度读取BG
-                    BufferedImage bpmidTmp = ImageIO.read(new File(Resources.getResource(rb.getString("bpmid2")).toURI()));
+                    BufferedImage bpmidTmp = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("bpmid2")));
                     bpmids2.add(bpmidTmp);
                     bp2.add(list.get(i));
                     bpMid2Height = bpmidTmp.getHeight();
                 } else {
-                    BufferedImage bpmidTmp = ImageIO.read(new File(Resources.getResource(rb.getString("bpmid3")).toURI()));
+                    BufferedImage bpmidTmp = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("bpmid3")));
                     bpmids3.add(bpmidTmp);
                     bp3.add(list.get(i));
                     bpMid3Height = bpmidTmp.getHeight();
@@ -423,7 +422,7 @@ public class imgUtil {
                 width = bpTop.getWidth();
                 bpTopHeight = bpTop.getHeight();
             }
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException e) {
             logger.error("读取BP布局图片失败");
             logger.error(e.getMessage());
             return "error";
