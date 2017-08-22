@@ -2,6 +2,9 @@ package top.mothership.osubot.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -20,6 +23,10 @@ public class pageUtil {
             URL avaurl = new URL(getAvaURL + uid + "?.png");
             return ImageIO.read(avaurl);
     }
-
-
+    //1.1预计功能：获取reps watched，获取score rank，
+    public int getRepWatched(String username) throws IOException {
+        Document doc = Jsoup.connect("http://www.oschina.net/").get();
+        //练习使用选择器
+        return 0;
+    }
 }
