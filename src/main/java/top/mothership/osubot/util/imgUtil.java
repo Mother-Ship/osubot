@@ -176,12 +176,12 @@ public class imgUtil {
         draw(g2, "defaultColor", "numberFont", "rankSize", "#" + userFromAPI.getPp_rank(), "rankx", "ranky");
 
         //绘制PP
-        draw(g2, "ppColor", "numberFont", "ppSize", "#" + userFromAPI.getPp_raw().toString(), "ppx", "ppy");
+        draw(g2, "ppColor", "numberFont", "ppSize",  userFromAPI.getPp_raw().toString(), "ppx", "ppy");
 
 
         //绘制RankedScore
         draw(g2, "defaultColor", "numberFont", "numberSize",
-                "#" + new DecimalFormat("###,###").format(userFromAPI.getRanked_score()), "rScorex", "rScorey");
+                 new DecimalFormat("###,###").format(userFromAPI.getRanked_score()), "rScorex", "rScorey");
         //绘制acc
         draw(g2, "defaultColor", "numberFont", "numberSize",
                 new DecimalFormat("###.00").format(userFromAPI.getAccuracy()) + "%", "accx", "accy");
@@ -327,40 +327,40 @@ public class imgUtil {
             if (userInDB.getCount_rank_ss() > userFromAPI.getCount_rank_ss()) {
                 //如果查询的SS比凌晨的少
                 draw(g2, "downColor", "diffFont", "countDiffSize",
-                        "(↓" + Integer.toString(userInDB.getCount_rank_ss() - userFromAPI.getCount_rank_ss()) + ")", "ssCountDiffx", "ssCountDiffy");
+                        "↓" + Integer.toString(userInDB.getCount_rank_ss() - userFromAPI.getCount_rank_ss()) , "ssCountDiffx", "ssCountDiffy");
             } else if (userInDB.getCount_rank_ss() < userFromAPI.getCount_rank_ss()) {
                 //如果SS变多了
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "(↑" + Integer.toString(userFromAPI.getCount_rank_ss() - userInDB.getCount_rank_ss()) + ")", "ssCountDiffx", "ssCountDiffy");
+                        "↑" + Integer.toString(userFromAPI.getCount_rank_ss() - userInDB.getCount_rank_ss()) , "ssCountDiffx", "ssCountDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "(↑" + Integer.toString(0) + ")", "ssCountDiffx", "ssCountDiffy");
+                        "↑" + Integer.toString(0) , "ssCountDiffx", "ssCountDiffy");
             }
             //s
             if (userInDB.getCount_rank_s() > userFromAPI.getCount_rank_s()) {
                 //如果查询的S比凌晨的少
                 draw(g2, "downColor", "diffFont", "countDiffSize",
-                        "(↓" + Integer.toString(userInDB.getCount_rank_s() - userFromAPI.getCount_rank_s()) + ")", "sCountDiffx", "sCountDiffy");
+                        "↓" + Integer.toString(userInDB.getCount_rank_s() - userFromAPI.getCount_rank_s()) , "sCountDiffx", "sCountDiffy");
             } else if (userInDB.getCount_rank_s() < userFromAPI.getCount_rank_s()) {
                 //如果S变多了
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "(↑" + Integer.toString(userFromAPI.getCount_rank_s() - userInDB.getCount_rank_s()) + ")", "sCountDiffx", "sCountDiffy");
+                        "↑" + Integer.toString(userFromAPI.getCount_rank_s() - userInDB.getCount_rank_s()) , "sCountDiffx", "sCountDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "(↑" + Integer.toString(0) + ")", "sCountDiffx", "sCountDiffy");
+                        "↑" + Integer.toString(0) , "sCountDiffx", "sCountDiffy");
             }
             //a
             if (userInDB.getCount_rank_a() > userFromAPI.getCount_rank_a()) {
                 //如果查询的S比凌晨的少
                 draw(g2, "downColor", "diffFont", "countDiffSize",
-                        "(↓" + Integer.toString(userInDB.getCount_rank_a() - userFromAPI.getCount_rank_a()) + ")", "aCountDiffx", "aCountDiffy");
+                        "↓" + Integer.toString(userInDB.getCount_rank_a() - userFromAPI.getCount_rank_a()) , "aCountDiffx", "aCountDiffy");
             } else if (userInDB.getCount_rank_a() < userFromAPI.getCount_rank_a()) {
                 //如果S变多了
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "(↑" + Integer.toString(userFromAPI.getCount_rank_a() - userInDB.getCount_rank_a()) + ")", "aCountDiffx", "aCountDiffy");
+                        "↑" + Integer.toString(userFromAPI.getCount_rank_a() - userInDB.getCount_rank_a()) , "aCountDiffx", "aCountDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "(↑" + Integer.toString(0) + ")", "aCountDiffx", "aCountDiffy");
+                        "↑" + Integer.toString(0) , "aCountDiffx", "aCountDiffy");
             }
         }
         g2.dispose();
