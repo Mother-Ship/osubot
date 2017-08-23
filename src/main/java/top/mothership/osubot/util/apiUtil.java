@@ -56,6 +56,9 @@ public class apiUtil {
                         (HttpURLConnection) new URL(URL).openConnection();
                 httpConnection.setRequestMethod("GET");
                 httpConnection.setRequestProperty("Accept", "application/json");
+
+                httpConnection.setConnectTimeout(2000);
+                httpConnection.setReadTimeout(2000);
                 if (httpConnection.getResponseCode() != 200) {
                     logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + retry + 1 + "次");
                     retry++;

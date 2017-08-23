@@ -226,9 +226,9 @@ public class imgUtil {
                 if (near) {
                     //如果取到的是模糊数据,输出具体日期
                     draw(g2, "tipColor", "tipFont", "tipSize",  "请求的日期没有数据", "tipx", "tipy");
-                    //算出天数差别然后加一天
+                    //算出天数差别
                     draw(g2, "tipColor", "tipFont", "tipSize",  "『对比于" + Long.valueOf(((Calendar.getInstance().getTime().getTime() -
-                            userInDB.getQueryDate().getTime()) / 1000 / 60 / 60 / 24) + 1).toString() + "天前』", "tip2x", "tip2y");
+                            userInDB.getQueryDate().getTime()) / 1000 / 60 / 60 / 24)).toString() + "天前』", "tip2x", "tip2y");
                 } else {
                     //如果取到的是精确数据
                     draw(g2, "tipColor", "tipFont", "tipSize", "『对比于" + day + "天前』", "tip2x", "tip2y");
