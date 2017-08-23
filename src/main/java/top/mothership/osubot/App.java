@@ -2,22 +2,21 @@ package top.mothership.osubot;
 
 import cc.plural.jsonij.JSON;
 import cc.plural.jsonij.parser.ParserException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft;
 import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.handshake.ServerHandshake;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import top.mothership.osubot.thread.adminThread;
 import top.mothership.osubot.thread.entryJob;
 import top.mothership.osubot.thread.playerThread;
+import top.mothership.osubot.thread.welcomeThread;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Calendar;
-import java.util.TimeZone;
 import java.util.Timer;
 
 /**
@@ -42,7 +41,7 @@ public class App {
     public static void main(String[] args) {
         logger.info("欢迎使用白菜1.0");
         Calendar c = Calendar.getInstance();
-        if(c.get(Calendar.HOUR_OF_DAY)>=4) {
+        if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
             c.add(Calendar.DATE, 1);
         }
         //这里用HOUR会出现：在早上6点运行，处理后的c.getTime变成08:00:00的问题
@@ -52,9 +51,9 @@ public class App {
         c.set(Calendar.SECOND, 0);
         Timer timer = new Timer();
 
-        long period = 1000*60*60*24;
+        long period = 1000 * 60 * 60 * 24;
         // 从现在开始的下一个UTC 20点，每24小时执行一次
-        logger.info("定时任务已添加：于"+c.getTime()+"开始每24小时执行一次");
+        logger.info("定时任务已添加：于" + c.getTime() + "开始每24小时执行一次");
         timer.schedule(new entryJob(), c.getTime(), period);
 
         try {
@@ -76,8 +75,8 @@ public class App {
                         if (json.get("act").getString().trim().equals("2")) {
                             String msg = json.get("msg").getString();
                             //对msg进行反转义
-                            msg  = msg.replaceAll("&#91;","[");
-                            msg  = msg.replaceAll("&#93;","]");
+                            msg = msg.replaceAll("&#91;", "[");
+                            msg = msg.replaceAll("&#93;", "]");
                             //对msg进行识别
                             if (msg.startsWith("!") || msg.startsWith("！")) {
                                 //如果消息由半角/全角感叹号开头，才获取群名/群号并且进行处理
@@ -86,11 +85,11 @@ public class App {
                                 //如果是需要提权的操作
                                 if ("sudo".equals(msg.substring(1, 5))) {
                                     String fromQQ = json.get("fromQQ").getString();
-                                    adminThread at = new adminThread(msg,groupId,fromQQ,cc);
+                                    adminThread at = new adminThread(msg, groupId, fromQQ, cc);
                                     logger.info("检测到来自【" + groupName + "】的提权操作群消息："
                                             + msg + ",已交给线程" + at.getName() + "处理");
                                     at.start();
-                                }else {
+                                } else {
                                     //开启新线程，将msg传入
                                     playerThread pt = new playerThread(msg, groupId, cc);
                                     logger.info("检测到来自【" + groupName + "】的群消息："
@@ -117,7 +116,21 @@ public class App {
                                 }
                             }
                         }
+                        if (json.get("act").getString().trim().equals("103")) {
+                            //群成员增加……
 
+                            //对msg进行识别
+                            String beingOperateQQ = json.get("beingOperateQQ").getString();
+                            String groupId = json.get("fromGroup").getString();
+                            String fromQQ = json.get("fromQQ").getString();
+
+                            welcomeThread wt = new welcomeThread(groupId,beingOperateQQ, cc);
+                            logger.info("检测到【" + groupId + "】的由"+fromQQ+"操作的成员新增："
+                                    + beingOperateQQ + ",已交给线程" + wt.toString() + "处理");
+                            wt.start();
+
+
+                        }
                     } catch (ParserException | IOException e) {
                         logger.fatal(e.getMessage());
                     }
@@ -126,7 +139,6 @@ public class App {
                 public void onClose(int code, String reason, boolean b) {
                     logger.warn("你已经断开连接: " + getURI() + "; 错误代码: " + code + "原因：" + reason);
                     connected = false;
-
 
                 }
 
@@ -142,7 +154,6 @@ public class App {
             logger.error("WebSocket服务器地址无效");
         }
     }
-
 
 
 }

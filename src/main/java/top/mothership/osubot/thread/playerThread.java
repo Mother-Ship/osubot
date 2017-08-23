@@ -112,7 +112,7 @@ public class playerThread extends Thread {
             }
             String role = dbUtil.getUserRole(userFromAPI.getUser_id());
 
-            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day,0, near);
+            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
             if (filename.equals("error")) {
                 sendGroupMsg("绘图过程中发生致命错误。");
             }

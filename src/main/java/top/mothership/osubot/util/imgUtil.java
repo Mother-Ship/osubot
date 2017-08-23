@@ -88,10 +88,19 @@ public class imgUtil {
 
             }
         }
+        if(mods.contains("NC")){
+            mods.remove("DT");
+        }
+        if(mods.contains("PF")){
+            mods.remove("SD");
+        }
         return mods.toString().substring(1, mods.toString().length()-1);
     }
 
-    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, int scoreRank, boolean near) {
+    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
+        int scoreRank = 0;
+//        logger.info("尝试使用二分法获取"+userFromAPI.getUsername()+"的scoreRank");
+//        int scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(),1,2000);
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage bg = null;
         BufferedImage layout = null;
@@ -153,10 +162,13 @@ public class imgUtil {
 //          g.drawImage(ava, 0, 0, resizedWidth, resizedHeight, null);
                 g.drawImage(ava.getScaledInstance(resizedWidth, resizedHeight, Image.SCALE_SMOOTH), 0, 0, resizedWidth, resizedHeight, null);
                 g.dispose();
+                ava.flush();
             } else {
                 //如果不需要缩小，直接把引用转过来
                 resizedAva = ava;
             }
+            resizedAva.flush();
+
             //先把头像画上去
             g2.drawImage(resizedAva, Integer.decode(rb.getString("avax")), Integer.decode(rb.getString("avay")), null);
         }

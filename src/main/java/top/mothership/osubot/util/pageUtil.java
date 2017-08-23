@@ -51,7 +51,58 @@ public class pageUtil {
         return Integer.valueOf(a);
     }
 
-    public int getScoreRank(long rScore) {
+    public int getRank(long rScore, int start, int end){
+        long endValue = getScore(end);
+        if (rScore < endValue||endValue==0) {
+            return 0;
+        }
+        //第一次写二分法……不过大部分时间都花在算准确页数，和拿页面元素上了
+        while (start <= end) {
+            int middle = (start + end) / 2;
+
+
+            long middleValue = getScore(middle);
+
+            if (middleValue == 0) {
+                return 0;
+            }
+            if (rScore == middleValue) {
+                // 等于中值直接返回
+                return middle;
+            } else if (rScore > middleValue) {
+                //rank和分数成反比，所以大于反而rank要在前半部分找
+                end = middle - 1;
+            } else {
+                start = middle + 1;
+            }
+        }
         return 0;
+    }
+
+
+    public long getScore(int rank){
+        Document doc = null;
+        int retry = 0;
+        logger.info("正在抓取#"+rank+"的玩家的分数");
+        //一定要把除出来的值强转
+        int p = Math.round((float) rank/50);
+        //获取当前rank在当前页的第几个
+        int num = (rank-1)%50;
+        while (retry < 5) {
+            try {
+                doc = Jsoup.connect("https://osu.ppy.sh/rankings/osu/score?page="+p).timeout(5000).get();
+                break;
+            } catch (IOException e) {
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
+                retry++;
+            }
+
+        }
+        if (retry == 5) {
+            logger.error("查询分数失败五次");
+            return 0;
+        }
+        return Long.valueOf(doc.select("td[class*=focused]").get(num).child(0).attr("title").replace(",",""));
+
     }
 }
