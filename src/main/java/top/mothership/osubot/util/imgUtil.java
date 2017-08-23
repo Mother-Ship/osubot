@@ -88,10 +88,10 @@ public class imgUtil {
 
             }
         }
-        return mods.toString().substring(1, mods.toString().length());
+        return mods.toString().substring(1, mods.toString().length()-1);
     }
 
-    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
+    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, int scoreRank, boolean near) {
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage bg = null;
         BufferedImage layout = null;
@@ -162,9 +162,6 @@ public class imgUtil {
         }
         //绘制文字
 
-        //预留的把布局画到背景图上的代码
-        //g2.drawImage(layout,0,0,null);
-
         //开启平滑
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -177,6 +174,10 @@ public class imgUtil {
         //绘制PP
         draw(g2, "ppColor", "numberFont", "ppSize",  userFromAPI.getPp_raw().toString(), "ppx", "ppy");
 
+
+        if(scoreRank>0){
+            draw(g2,"scoreRankColor","scoreRankFont","scoreRankSize",Integer.toString(scoreRank),"scoreRankx","scoreRanky");
+        }
 
         //绘制RankedScore
         draw(g2, "defaultColor", "numberFont", "numberSize",

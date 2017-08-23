@@ -60,7 +60,7 @@ public class apiUtil {
                 httpConnection.setConnectTimeout(2000);
                 httpConnection.setReadTimeout(2000);
                 if (httpConnection.getResponseCode() != 200) {
-                    logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + retry + 1 + "次");
+                    logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
                     continue;
                 }
@@ -75,7 +75,7 @@ public class apiUtil {
                 responseBuffer.close();
                 break;
             } catch (IOException e) {
-                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + retry + 1 + "次");
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
                 retry++;
             }
 
@@ -114,7 +114,7 @@ public class apiUtil {
                 httpConnection.setConnectTimeout(2000);
                 httpConnection.setReadTimeout(2000);
                 if (httpConnection.getResponseCode() != 200) {
-                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + retry + 1 + "次");
+                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
                     continue;
                 }
@@ -137,7 +137,7 @@ public class apiUtil {
                 list = new Gson().fromJson(output, listType);
                 break;
             } catch (IOException e) {
-                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + retry + 1 + "次");
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
                 retry++;
             }
         }
@@ -179,7 +179,7 @@ public class apiUtil {
                 httpConnection.setReadTimeout(1000);
                 //如果ppy的泡面撒了
                 if (httpConnection.getResponseCode() != 200) {
-                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + retry + 1 + "次");
+                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
                     continue;
                 }
@@ -194,7 +194,7 @@ public class apiUtil {
                 output = output.substring(1, output.length() - 1);
                 break;
             } catch (IOException e) {
-                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + retry + 1 + "次");
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
                 retry++;
             }
         }

@@ -63,14 +63,14 @@ public class playerThread extends Thread {
                         return;
                     }
                     if (day < 0) {
-                        sendGroupMsg("天数不能为负值。");
+                        sendGroupMsg("白菜不会预知未来。");
                         logger.info("天数不能为负值");
                         logger.info("线程" + this.getName() + "处理完毕，已经退出");
                         return;
                     }
                 } catch (java.lang.NumberFormatException e) {
-                    sendGroupMsg("天数超过整型上限。");
-                    logger.info("天数超过整型上限");
+                    sendGroupMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
+                    logger.info("给的天数不是int值");
                     logger.info("线程" + this.getName() + "处理完毕，已经退出");
                     return;
                 } catch (ParseException e) {
@@ -112,7 +112,7 @@ public class playerThread extends Thread {
             }
             String role = dbUtil.getUserRole(userFromAPI.getUser_id());
 
-            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
+            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day,0, near);
             if (filename.equals("error")) {
                 sendGroupMsg("绘图过程中发生致命错误。");
             }
