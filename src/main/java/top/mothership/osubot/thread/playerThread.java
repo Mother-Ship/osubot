@@ -50,7 +50,7 @@ public class playerThread extends Thread {
             //默认初始化为1
             int day = 1;
             String username;
-
+            //把stata砍了，日后做其他功能再说
             if (msg.contains("#")) {
                 //潜在风险：如果消息长度超过整型限制会出异常，而且不会有任何回复，考虑到这种情况实在太少见不做处理
                 index = msg.indexOf("#");
@@ -62,44 +62,38 @@ public class playerThread extends Thread {
                         logger.info("线程" + this.getName() + "处理完毕，已经退出");
                         return;
                     }
+                    if (day < 0) {
+                        sendGroupMsg("白菜不会预知未来。");
+                        logger.info("天数不能为负值");
+                        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                        return;
+                    }
                 } catch (java.lang.NumberFormatException e) {
-                    sendGroupMsg("天数超过整型上限。");
-                    logger.info("天数超过整型上限");
+                    sendGroupMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
+                    logger.info("给的天数不是int值");
                     logger.info("线程" + this.getName() + "处理完毕，已经退出");
                     return;
                 } catch (ParseException e) {
-                    e.printStackTrace();
+                    //由于解析的是固定字符串，不会出异常，无视
                 }
                 username = msg.substring(6, index - 1);
             } else {
                 username = msg.substring(6);
             }
-            if (day < 0) {
-                sendGroupMsg("天数不能为负值。");
-                logger.info("天数不能为负值");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            if("白菜".equals(username)){
+                sendGroupMsg("唉，没人疼没人爱，我是地里一颗小白菜。");
                 return;
             }
-
-
-            logger.info("接收到玩家" + username + "的查询请求");
-            if ("a".equals(msg.substring(5, 6))) {
-                //后期做一个文本版本的，暂时这两个命令没什么区别
-                if (msg.contains("#")) {
-                    index = msg.indexOf("#");
-                    day = Integer.valueOf(msg.substring(index + 1));
-                    username = msg.substring(7, index - 1);
-                } else {
-                    username = msg.substring(8);
-                }
-            }
             logger.info("开始调用API查询" + username + "的信息");
-            User userFromAPI = apiUtil.getUser(username,0);
-                if (userFromAPI == null) {
-                    sendGroupMsg("没有在官网查到这个玩家。");
-                    return;
-                }
-
+            User userFromAPI = apiUtil.getUser(username, 0);
+            if (userFromAPI == null) {
+                sendGroupMsg("没有在官网查到这个玩家。");
+                return;
+            }
+            if (userFromAPI.getUser_id() == 3) {
+                sendGroupMsg("你们总是想查BanchoBot。\\n可是BanchoBot已经很累了，她不想被查。\\n她想念自己的小ppy，而不是被逼着查PP。\\n你有考虑过这些吗？没有！你只考虑过你自己。");
+                return;
+            }
 
             if (dbUtil.getUserRole(userFromAPI.getUser_id()).equals("notFound")) {
                 //是个没用过白菜的人呢
@@ -118,7 +112,7 @@ public class playerThread extends Thread {
             }
             String role = dbUtil.getUserRole(userFromAPI.getUser_id());
 
-            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
+            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day,0, near);
             if (filename.equals("error")) {
                 sendGroupMsg("绘图过程中发生致命错误。");
             }
@@ -140,11 +134,11 @@ public class playerThread extends Thread {
             String username = msg.substring(4);
             logger.info("接收到玩家" + username + "的BP查询请求");
 
-            User user = apiUtil.getUser(username,0);
-                if (user == null) {
-                    sendGroupMsg("没有在官网查到这个玩家。");
-                    return;
-                }
+            User user = apiUtil.getUser(username, 0);
+            if (user == null) {
+                sendGroupMsg("没有在官网查到这个玩家。");
+                return;
+            }
 
             if (dbUtil.getUserRole(user.getUser_id()).equals("notFound")) {
                 //是个没用过白菜的人呢
@@ -153,14 +147,13 @@ public class playerThread extends Thread {
                 dbUtil.addUserId(user.getUser_id());
                 dbUtil.addUserInfo(user);
             }
-
-
-                    logger.info("开始获取玩家" + user.getUsername() + "的今日BP");
-                    List<BP> list  = apiUtil.getTodayBP(user.getUsername(),0);
-                    if (list.size() == 0) {
-                        sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
-                        logger.info("没有查到该玩家今天更新的BP");
-                    }
+            logger.info("开始获取玩家" + user.getUsername() + "的今日BP");
+            List<BP> list = apiUtil.getTodayBP(user.getUsername(), 0);
+            if (list.size() == 0) {
+                sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
+                logger.info("没有查到该玩家今天更新的BP");
+                return;
+            }
 
             for (BP aList : list) {
                 //对BP进行遍历，请求API将名称写入

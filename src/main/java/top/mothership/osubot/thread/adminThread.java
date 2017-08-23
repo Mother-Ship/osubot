@@ -138,7 +138,7 @@ public class adminThread extends Thread {
                         logger.info("将用户" + user.getUsername() + "添加到数据库。");
                         if (usernames.length == 1) {
                             logger.info("新增单个用户，绘制名片");
-                            img = imgUtil.drawUserInfo(user, null, role, 0, false);
+                            img = imgUtil.drawUserInfo(user, null, role, 0, 0,false);
                         }
                         addList.add(user.getUsername());
                     } else {
@@ -176,9 +176,10 @@ public class adminThread extends Thread {
                 resp = resp.concat("\\n[CQ:image,file=" + img + "]");
             }
             sendMsg(resp);
-
             logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            return;
         }
+
         if ("check".equals(msg.substring(6, 11))) {
             String username;
             try {

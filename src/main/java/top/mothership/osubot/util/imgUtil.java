@@ -88,10 +88,10 @@ public class imgUtil {
 
             }
         }
-        return mods.toString().substring(1, mods.toString().length());
+        return mods.toString().substring(1, mods.toString().length()-1);
     }
 
-    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
+    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, int scoreRank, boolean near) {
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage bg = null;
         BufferedImage layout = null;
@@ -162,9 +162,6 @@ public class imgUtil {
         }
         //绘制文字
 
-        //预留的把布局画到背景图上的代码
-        //g2.drawImage(layout,0,0,null);
-
         //开启平滑
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -177,6 +174,10 @@ public class imgUtil {
         //绘制PP
         draw(g2, "ppColor", "numberFont", "ppSize",  userFromAPI.getPp_raw().toString(), "ppx", "ppy");
 
+
+        if(scoreRank>0){
+            draw(g2,"scoreRankColor","scoreRankFont","scoreRankSize",Integer.toString(scoreRank),"scoreRankx","scoreRanky");
+        }
 
         //绘制RankedScore
         draw(g2, "defaultColor", "numberFont", "numberSize",
@@ -226,9 +227,9 @@ public class imgUtil {
                 if (near) {
                     //如果取到的是模糊数据,输出具体日期
                     draw(g2, "tipColor", "tipFont", "tipSize",  "请求的日期没有数据", "tipx", "tipy");
-                    //算出天数差别然后加一天
+                    //算出天数差别
                     draw(g2, "tipColor", "tipFont", "tipSize",  "『对比于" + Long.valueOf(((Calendar.getInstance().getTime().getTime() -
-                            userInDB.getQueryDate().getTime()) / 1000 / 60 / 60 / 24) + 1).toString() + "天前』", "tip2x", "tip2y");
+                            userInDB.getQueryDate().getTime()) / 1000 / 60 / 60 / 24)).toString() + "天前』", "tip2x", "tip2y");
                 } else {
                     //如果取到的是精确数据
                     draw(g2, "tipColor", "tipFont", "tipSize", "『对比于" + day + "天前』", "tip2x", "tip2y");

@@ -50,12 +50,13 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         String output = null;
         int retry = 0;
-        while (retry < 10) {
+        while (retry < 5) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(URL).openConnection();
                 httpConnection.setRequestMethod("GET");
                 httpConnection.setRequestProperty("Accept", "application/json");
+
                 httpConnection.setConnectTimeout(2000);
                 httpConnection.setReadTimeout(2000);
                 if (httpConnection.getResponseCode() != 200) {
@@ -63,6 +64,8 @@ public class apiUtil {
                     retry++;
                     continue;
                 }
+
+
                 //读取返回结果
                 BufferedReader responseBuffer =
                         new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
@@ -77,8 +80,8 @@ public class apiUtil {
             }
 
         }
-        if (retry == 10) {
-            logger.error("玩家" + userId + "请求API获取数据失败，已重试10次");
+        if (retry == 5) {
+            logger.error("玩家" + userId + "请求API获取数据，失败五次");
             return null;
         }
         //去掉两侧的中括号
@@ -101,7 +104,7 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         List<BP> list = null;
         int retry = 0;
-        while (retry < 10) {
+        while (retry < 5) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(URL).openConnection();
@@ -138,8 +141,8 @@ public class apiUtil {
                 retry++;
             }
         }
-        if (retry == 10) {
-            logger.error("玩家" + username + "请求API获取BP失败，已重试10次");
+        if (retry == 5) {
+            logger.error("玩家" + username + "请求API获取BP，失败五次");
             return null;
         }
         //传入的是北京时间……
@@ -165,7 +168,7 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         String output = null;
         int retry = 0;
-        while (retry < 10) {
+        while (retry < 5) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(getMapURL + "?k=" + key + "&b=" + bid).openConnection();
@@ -195,8 +198,8 @@ public class apiUtil {
                 retry++;
             }
         }
-        if (retry == 10) {
-            logger.error("谱面" + bid + "的名称获取失败，已重试10次");
+        if (retry == 5) {
+            logger.error("谱面" + bid + "的名称获取失败");
             return null;
         }
 
