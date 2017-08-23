@@ -176,9 +176,10 @@ public class adminThread extends Thread {
                 resp = resp.concat("\\n[CQ:image,file=" + img + "]");
             }
             sendMsg(resp);
-
             logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            return;
         }
+
         if ("check".equals(msg.substring(6, 11))) {
             String username;
             try {

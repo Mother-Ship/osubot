@@ -16,16 +16,18 @@ import java.net.URL;
 public class pageUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final String getAvaURL = "https://a.ppy.sh/";
-
+    private final String getUserURL = "https://osu.ppy.sh/u/";
     //后续在这个类里解析dom树获取网页内容
     //将异常抛出给调用者
     public BufferedImage getAvatar(int uid) throws IOException {
             URL avaurl = new URL(getAvaURL + uid + "?.png");
             return ImageIO.read(avaurl);
     }
-    //1.1预计功能：获取reps watched，获取score rank，
+    //1.1预计功能：获取reps watched，获取score rank
+    //这个方法给的用户名是
     public int getRepWatched(String username) throws IOException {
-        Document doc = Jsoup.connect("http://www.oschina.net/").get();
+        Document doc = Jsoup.connect(getUserURL+username).get();
+
         //练习使用选择器
         return 0;
     }
