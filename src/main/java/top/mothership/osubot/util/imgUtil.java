@@ -107,7 +107,6 @@ public class imgUtil {
         BufferedImage ava = null;
         BufferedImage resizedAva = null;
         try {
-            //使用guava的类读取路径
             layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("userlayout")));
         } catch (IOException e) {
             logger.error("读取布局图片失败");
@@ -133,7 +132,6 @@ public class imgUtil {
         Graphics2D g2 = (Graphics2D) bg.getGraphics();
         //把布局画到bg上
         g2.drawImage(layout, 0, 0, null);
-
         try {
             //此处传入的应该是用户的数字id
             ava = pageUtil.getAvatar(userFromAPI.getUser_id());
@@ -141,6 +139,7 @@ public class imgUtil {
             logger.error("从官网获取头像失败");
             logger.error(e.getMessage());
         }
+
         if (ava != null) {
             //进行缩放
             if (ava.getHeight() > 128 || ava.getWidth() > 128) {
@@ -255,62 +254,62 @@ public class imgUtil {
             if (userInDB.getPp_rank() > userFromAPI.getPp_rank()) {
                 //如果查询的rank比凌晨中的小
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + Integer.toString(userInDB.getPp_rank() - userFromAPI.getPp_rank()) + ")", "rankDiffx", "rankDiffy");
+                        "↑" + Integer.toString(userInDB.getPp_rank() - userFromAPI.getPp_rank()) , "rankDiffx", "rankDiffy");
             } else if (userInDB.getPp_rank() < userFromAPI.getPp_rank()) {
                 //如果掉了rank
                 draw(g2, "downColor", "diffFont", "diffSize",
-                        "(↓" + Integer.toString(userFromAPI.getPp_rank() - userInDB.getPp_rank()) + ")", "rankDiffx", "rankDiffy");
+                        "↓" + Integer.toString(userFromAPI.getPp_rank() - userInDB.getPp_rank()) , "rankDiffx", "rankDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + Integer.toString(0) + ")", "rankDiffx", "rankDiffy");
+                        "↑" + Integer.toString(0) , "rankDiffx", "rankDiffy");
             }
             //绘制PP变化
             if (userInDB.getPp_raw() > userFromAPI.getPp_raw()) {
                 //如果查询的pp比凌晨中的小
                 draw(g2, "downColor", "diffFont", "diffSize",
-                        "(↓" + new DecimalFormat("##0.00").format(userInDB.getPp_raw() - userFromAPI.getPp_raw()) + ")", "ppDiffx", "ppDiffy");
+                        "↓" + new DecimalFormat("##0.00").format(userInDB.getPp_raw() - userFromAPI.getPp_raw()) , "ppDiffx", "ppDiffy");
             } else if (userInDB.getPp_raw() < userFromAPI.getPp_raw()) {
                 //刷了PP
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + new DecimalFormat("##0.00").format(userFromAPI.getPp_raw() - userInDB.getPp_raw()) + ")", "ppDiffx", "ppDiffy");
+                        "↑" + new DecimalFormat("##0.00").format(userFromAPI.getPp_raw() - userInDB.getPp_raw()) , "ppDiffx", "ppDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + Integer.toString(0) + ")", "ppDiffx", "ppDiffy");
+                        "↑" + Integer.toString(0) , "ppDiffx", "ppDiffy");
             }
 
             //绘制RankedScore变化
             if (userInDB.getRanked_score() < userFromAPI.getRanked_score()) {
                 //因为RankedScore不会变少，所以不写蓝色部分
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + new DecimalFormat("###,###").format(userFromAPI.getRanked_score() - userInDB.getRanked_score()) + ")", "rScoreDiffx", "rScoreDiffy");
+                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getRanked_score() - userInDB.getRanked_score()) , "rScoreDiffx", "rScoreDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + Integer.toString(0) + ")", "rScoreDiffx", "rScoreDiffy");
+                        "↑" + Integer.toString(0) , "rScoreDiffx", "rScoreDiffy");
             }
             //绘制ACC变化
             //在这里把精度砍掉
             if (Float.valueOf(new DecimalFormat("##0.00").format(userInDB.getAccuracy())) > Float.valueOf(new DecimalFormat("##0.00").format(userFromAPI.getAccuracy()))) {
                 //如果acc降低了
                 draw(g2, "downColor", "diffFont", "diffSize",
-                        "(↓" + new DecimalFormat("##0.00").format(userInDB.getAccuracy() - userFromAPI.getAccuracy()) + "%)", "accDiffx", "accDiffy");
+                        "↓" + new DecimalFormat("##0.00").format(userInDB.getAccuracy() - userFromAPI.getAccuracy()) + "%", "accDiffx", "accDiffy");
             } else if (Float.valueOf(new DecimalFormat("##0.00").format(userInDB.getAccuracy())) < Float.valueOf(new DecimalFormat("##0.00").format(userFromAPI.getAccuracy()))) {
                 //提高
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + new DecimalFormat("##0.00").format(userFromAPI.getAccuracy() - userInDB.getAccuracy()) + "%)", "accDiffx", "accDiffy");
+                        "↑" + new DecimalFormat("##0.00").format(userFromAPI.getAccuracy() - userInDB.getAccuracy()) + "%", "accDiffx", "accDiffy");
 
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + new DecimalFormat("##0.00").format(0.00) + "%)", "accDiffx", "accDiffy");
+                        "↑" + new DecimalFormat("##0.00").format(0.00) + "%", "accDiffx", "accDiffy");
             }
 
             //绘制pc变化
             if (userInDB.getPlaycount() < userFromAPI.getPlaycount()) {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + new DecimalFormat("###,###").format(userFromAPI.getPlaycount() - userInDB.getPlaycount()) + ")", "pcDiffx", "pcDiffy");
+                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getPlaycount() - userInDB.getPlaycount()) , "pcDiffx", "pcDiffy");
 
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + Integer.toString(0) + ")", "pcDiffx", "pcDiffy");
+                        "↑" + Integer.toString(0) , "pcDiffx", "pcDiffy");
 
             }
 
@@ -319,19 +318,19 @@ public class imgUtil {
                     < userFromAPI.getCount50() + userFromAPI.getCount100() + userFromAPI.getCount300()) {
                 //同理不写蓝色部分
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + new DecimalFormat("###,###").format(userFromAPI.getCount50() + userFromAPI.getCount100() + userFromAPI.getCount300() - (userInDB.getCount50() + userInDB.getCount100() + userInDB.getCount300())) + ")", "tthDiffx", "tthDiffy");
+                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getCount50() + userFromAPI.getCount100() + userFromAPI.getCount300() - (userInDB.getCount50() + userInDB.getCount100() + userInDB.getCount300())) , "tthDiffx", "tthDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + Integer.toString(0) + ")", "tthDiffx", "tthDiffy");
+                        "↑" + Integer.toString(0) , "tthDiffx", "tthDiffy");
             }
             //绘制level变化
             if (Float.valueOf(new DecimalFormat("##0.00").format(userInDB.getLevel())) < Float.valueOf(new DecimalFormat("##0.00").format(userFromAPI.getLevel()))) {
                 //同理不写蓝色部分
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + (int) ((userFromAPI.getLevel() - userInDB.getLevel()) * 100) + "%)", "levelDiffx", "levelDiffy");
+                        "↑" + (int) ((userFromAPI.getLevel() - userInDB.getLevel()) * 100) + "%", "levelDiffx", "levelDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "(↑" + Integer.toString(0) + "%)", "levelDiffx", "levelDiffy");
+                        "↑" + Integer.toString(0) + "%", "levelDiffx", "levelDiffy");
             }
             //绘制SS count 变化
             //这里需要改变字体大小
@@ -587,7 +586,24 @@ public class imgUtil {
             return "error";
         }
 
+
+
     }
 
+
+    public String drawOneBP(User user, BP bp){
+        BufferedImage bg;
+        try {
+            //此处传入的应该是用户的数字id
+            bg = pageUtil.getBG(bp.getBeatmap_id());
+        } catch (IOException | NullPointerException e) {
+            logger.error("从官网获取头像失败");
+            logger.error(e.getMessage());
+            return "error";
+        }
+        //TODO 绘制结算界面
+        // 当一定时间/一定条数内 同样消息出现五条之后，开始缓冲消息，到100条谁说了第六条就谁复读，判定到复读之后判定是否群管，如果是群管复读艾特群主，如果是群主。。什么也不做（x
+        return null;
+    }
 
 }

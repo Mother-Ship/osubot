@@ -77,6 +77,7 @@ public class App {
                             //对msg进行反转义
                             msg = msg.replaceAll("&#91;", "[");
                             msg = msg.replaceAll("&#93;", "]");
+
                             //对msg进行识别
                             if (msg.startsWith("!") || msg.startsWith("！")) {
                                 //如果消息由半角/全角感叹号开头，才获取群名/群号并且进行处理
@@ -97,7 +98,12 @@ public class App {
 
                                     pt.start();
                                 }
+                            }else{
+                                //如果不是感叹号开头的消息，进入禁言识别
+                                //TODO 禁言识别
                             }
+
+
                         }
 
                         if (json.get("act").getString().trim().equals("21")) {

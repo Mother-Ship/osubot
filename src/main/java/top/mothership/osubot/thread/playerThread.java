@@ -76,7 +76,10 @@ public class playerThread extends Thread {
                 } catch (ParseException e) {
                     //由于解析的是固定字符串，不会出异常，无视
                 }
-                username = msg.substring(6, index - 1);
+                //因为本来id末空格也不影响
+                //多读一位可以支持id接#不加空格
+
+                username = msg.substring(6, index);
             } else {
                 username = msg.substring(6);
             }
@@ -133,6 +136,11 @@ public class playerThread extends Thread {
         if ("bp".equals(msg.substring(1, 3))) {
             String username = msg.substring(4);
             logger.info("接收到玩家" + username + "的BP查询请求");
+            String param = null;
+            if (msg.contains("#")) {
+               int index = msg.indexOf("#");
+               param = msg.substring(index + 1);
+            }
 
             User user = apiUtil.getUser(username, 0);
             if (user == null) {
@@ -161,12 +169,46 @@ public class playerThread extends Thread {
                 String name = apiUtil.getMapName(aList.getBeatmap_id());
                 aList.setBeatmap_name(name);
             }
-            logger.info("正在绘制今日BP");
-            String filename = imgUtil.drawUserBP(user, list);
-            if (filename.equals("error")) {
-                sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
+            String filename = null;
+            if(param==null) {
+                logger.info("正在绘制今日BP");
+                filename = imgUtil.drawUserBP(user, list);
+                if (filename.equals("error")) {
+                    sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
+                }
+                sendGroupMsg("[CQ:image,file=" + filename + "]");
+            }else{
+                //nearest
+                if("n".equals(param)){
+                    logger.info("正在绘制最近BP");
+                    //对list中的bp按日期排序
+                    BP temp = null;
+                    int size = list.size();
+                    for(int i = 0 ; i < size-1; i ++)
+                    {
+                        for(int j = 0 ;j < size-1-i ; j++)
+                        {   //如果j比j+1晚
+                            if(list.get(j).getDate().after(list.get(j+1).getDate()))
+                            {   //把j+1给j 把j给j+1
+                                temp = list.get(j);
+                                list.set(j,list.get(j+1));
+                                list.set(j+1,temp);
+                            }
+                        }
+                    }
+                    BP bp = list.get(0);
+                    filename = imgUtil.drawOneBP(user, bp);
+                    if (filename.equals("error")) {
+                        sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
+                    }
+                    sendGroupMsg("[CQ:image,file=" + filename + "]");
+                }else{
+                    sendGroupMsg("不，不行，不能这样");
+                    logger.info("传入了没有用的参数");
+                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                    return;
+                }
             }
-            sendGroupMsg("[CQ:image,file=" + filename + "]");
             try {
                 logger.info("线程暂停两秒，以免发送成功前删除文件");
                 Thread.sleep(2000);
@@ -177,6 +219,9 @@ public class playerThread extends Thread {
             File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
             f.delete();
         }
+
+
+
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
     }
 
