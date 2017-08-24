@@ -633,24 +633,26 @@ public class imgUtil {
 
 
         //获取bp原分辨率，将宽拉到1366，然后算出高，减去768除以二然后上下各减掉这部分
-        int resizedHeight = (int) ((float) bg.getHeight() / bg.getWidth()) * 1366;
-        int diff = (resizedHeight - 768) / 2 + 1;
+        int resizedHeight = Math.round ((float) bg.getHeight() / bg.getWidth() * 1366) -1;
+
+        int diff = (int)(resizedHeight - 768) / 2 + 1;
         //把BG横向拉到1366
-        Graphics2D g = (Graphics2D) bg.createGraphics();
+        BufferedImage resizedBGTmp = new BufferedImage(1366, resizedHeight, bg.getType());
+        Graphics2D g = (Graphics2D) resizedBGTmp.createGraphics();
         g.drawImage(bg.getScaledInstance(1366, resizedHeight, Image.SCALE_SMOOTH), 0, 0, 1366, resizedHeight, null);
         g.dispose();
         //切割图片
         BufferedImage resizedBG = new BufferedImage(1366, 768, bg.getType());
-        for (int x = 0; x < 1366; ++x) {
-            for (int y = diff; y < bg.getHeight() - diff; ++y) {
-                resizedBG.setRGB(x, y, bg.getRGB(x, y));
+        for (int x = 0; x < 1365; x++) {
+            for (int y = diff; y < bg.getHeight() - diff; y++) {
+                resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x, y));
             }
         }
         //刷新掉bg的缓冲，将其作废
         bg.flush();
 
         //整体暗化20%
-        RescaleOp op = new RescaleOp(2.5f, 0, null);
+        RescaleOp op = new RescaleOp(0.5f, 0, null);
         resizedBG = op.filter(resizedBG, null);
         Graphics2D g2 = (Graphics2D) resizedBG.getGraphics();
 
@@ -709,8 +711,15 @@ public class imgUtil {
 
         //写字
 
-
-        return null;
+            g2.dispose();
+        try {
+            ImageIO.write(resizedBG, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id()+"_"+bp.getDate() + ".png"));
+            return bp.getBeatmap_id()+"_"+bp.getDate() + ".png";
+        } catch (IOException e) {
+            logger.error("绘制图片成品失败");
+            logger.error(e.getMessage());
+            return "error";
+        }
     }
 
 }

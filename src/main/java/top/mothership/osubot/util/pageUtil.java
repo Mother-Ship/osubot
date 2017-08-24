@@ -18,7 +18,7 @@ public class pageUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final String getAvaURL = "https://a.ppy.sh/";
     private final String getUserURL = "https://osu.ppy.sh/pages/include/profile-general.php?u=";
-    private final String getBGURL = "http://bloodcat.com/i/";
+    private final String getBGURL = "http://bloodcat.com/osu/i/";
     //后续在这个类里解析dom树获取网页内容
     //将异常抛出给调用者
     public BufferedImage getAvatar(int uid) throws IOException {

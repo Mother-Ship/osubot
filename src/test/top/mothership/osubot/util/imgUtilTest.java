@@ -1,6 +1,9 @@
 package top.mothership.osubot.util;
 
+import com.google.gson.Gson;
 import junit.framework.TestCase;
+import top.mothership.osubot.pojo.BP;
+import top.mothership.osubot.pojo.User;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,23 +20,13 @@ import java.util.List;
  */
 public class imgUtilTest extends TestCase {
     public void testDrawOneBP() throws Exception {
-        final Path path = Paths.get("C:\\\\CoolQ Pro\\data\\image\\resource\\result");
-        final List<File> files = new ArrayList<File>();
-        SimpleFileVisitor<Path> finder = new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                files.add(file.toFile());
-                return super.visitFile(file, attrs);
-            }
-        };
-        try {
-            java.nio.file.Files.walkFileTree(path, finder);
-        } catch (IOException e) {
-        }
-        List<String> names = new ArrayList<>();
-        for (int i = 0; i < files.size(); i++) {
-            names.add(files.get(i).getName());
-        }
+        imgUtil imgUtil = new imgUtil();
+
+        BP bp = new BP();
+        bp.setBeatmap_id(53554);
+        bp.setRank("XH");
+        bp.setPerfect(1);
+        imgUtil.drawOneBP(null,bp);
     }
 
 }
