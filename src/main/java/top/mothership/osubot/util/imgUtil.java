@@ -8,13 +8,20 @@ import top.mothership.osubot.pojo.User;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.RescaleOp;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.ResourceBundle;
 
 public class imgUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
@@ -88,13 +95,13 @@ public class imgUtil {
 
             }
         }
-        if(mods.contains("NC")){
+        if (mods.contains("NC")) {
             mods.remove("DT");
         }
-        if(mods.contains("PF")){
+        if (mods.contains("PF")) {
             mods.remove("SD");
         }
-        return mods.toString().substring(1, mods.toString().length()-1);
+        return mods.toString().substring(1, mods.toString().length() - 1);
     }
 
     public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
@@ -183,16 +190,16 @@ public class imgUtil {
         draw(g2, "defaultColor", "numberFont", "rankSize", "#" + userFromAPI.getPp_rank(), "rankx", "ranky");
 
         //绘制PP
-        draw(g2, "ppColor", "numberFont", "ppSize",  userFromAPI.getPp_raw().toString(), "ppx", "ppy");
+        draw(g2, "ppColor", "numberFont", "ppSize", userFromAPI.getPp_raw().toString(), "ppx", "ppy");
 
 
-        if(scoreRank>0){
-            draw(g2,"scoreRankColor","scoreRankFont","scoreRankSize",Integer.toString(scoreRank),"scoreRankx","scoreRanky");
+        if (scoreRank > 0) {
+            draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", Integer.toString(scoreRank), "scoreRankx", "scoreRanky");
         }
 
         //绘制RankedScore
         draw(g2, "defaultColor", "numberFont", "numberSize",
-                 new DecimalFormat("###,###").format(userFromAPI.getRanked_score()), "rScorex", "rScorey");
+                new DecimalFormat("###,###").format(userFromAPI.getRanked_score()), "rScorex", "rScorey");
         //绘制acc
         draw(g2, "defaultColor", "numberFont", "numberSize",
                 new DecimalFormat("###.00").format(userFromAPI.getAccuracy()) + "%", "accx", "accy");
@@ -237,9 +244,9 @@ public class imgUtil {
                 //只有day>1才会出现文字
                 if (near) {
                     //如果取到的是模糊数据,输出具体日期
-                    draw(g2, "tipColor", "tipFont", "tipSize",  "请求的日期没有数据", "tipx", "tipy");
+                    draw(g2, "tipColor", "tipFont", "tipSize", "请求的日期没有数据", "tipx", "tipy");
                     //算出天数差别
-                    draw(g2, "tipColor", "tipFont", "tipSize",  "『对比于" + Long.valueOf(((Calendar.getInstance().getTime().getTime() -
+                    draw(g2, "tipColor", "tipFont", "tipSize", "『对比于" + Long.valueOf(((Calendar.getInstance().getTime().getTime() -
                             userInDB.getQueryDate().getTime()) / 1000 / 60 / 60 / 24)).toString() + "天前』", "tip2x", "tip2y");
                 } else {
                     //如果取到的是精确数据
@@ -254,37 +261,37 @@ public class imgUtil {
             if (userInDB.getPp_rank() > userFromAPI.getPp_rank()) {
                 //如果查询的rank比凌晨中的小
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + Integer.toString(userInDB.getPp_rank() - userFromAPI.getPp_rank()) , "rankDiffx", "rankDiffy");
+                        "↑" + Integer.toString(userInDB.getPp_rank() - userFromAPI.getPp_rank()), "rankDiffx", "rankDiffy");
             } else if (userInDB.getPp_rank() < userFromAPI.getPp_rank()) {
                 //如果掉了rank
                 draw(g2, "downColor", "diffFont", "diffSize",
-                        "↓" + Integer.toString(userFromAPI.getPp_rank() - userInDB.getPp_rank()) , "rankDiffx", "rankDiffy");
+                        "↓" + Integer.toString(userFromAPI.getPp_rank() - userInDB.getPp_rank()), "rankDiffx", "rankDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + Integer.toString(0) , "rankDiffx", "rankDiffy");
+                        "↑" + Integer.toString(0), "rankDiffx", "rankDiffy");
             }
             //绘制PP变化
             if (userInDB.getPp_raw() > userFromAPI.getPp_raw()) {
                 //如果查询的pp比凌晨中的小
                 draw(g2, "downColor", "diffFont", "diffSize",
-                        "↓" + new DecimalFormat("##0.00").format(userInDB.getPp_raw() - userFromAPI.getPp_raw()) , "ppDiffx", "ppDiffy");
+                        "↓" + new DecimalFormat("##0.00").format(userInDB.getPp_raw() - userFromAPI.getPp_raw()), "ppDiffx", "ppDiffy");
             } else if (userInDB.getPp_raw() < userFromAPI.getPp_raw()) {
                 //刷了PP
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + new DecimalFormat("##0.00").format(userFromAPI.getPp_raw() - userInDB.getPp_raw()) , "ppDiffx", "ppDiffy");
+                        "↑" + new DecimalFormat("##0.00").format(userFromAPI.getPp_raw() - userInDB.getPp_raw()), "ppDiffx", "ppDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + Integer.toString(0) , "ppDiffx", "ppDiffy");
+                        "↑" + Integer.toString(0), "ppDiffx", "ppDiffy");
             }
 
             //绘制RankedScore变化
             if (userInDB.getRanked_score() < userFromAPI.getRanked_score()) {
                 //因为RankedScore不会变少，所以不写蓝色部分
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getRanked_score() - userInDB.getRanked_score()) , "rScoreDiffx", "rScoreDiffy");
+                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getRanked_score() - userInDB.getRanked_score()), "rScoreDiffx", "rScoreDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + Integer.toString(0) , "rScoreDiffx", "rScoreDiffy");
+                        "↑" + Integer.toString(0), "rScoreDiffx", "rScoreDiffy");
             }
             //绘制ACC变化
             //在这里把精度砍掉
@@ -305,11 +312,11 @@ public class imgUtil {
             //绘制pc变化
             if (userInDB.getPlaycount() < userFromAPI.getPlaycount()) {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getPlaycount() - userInDB.getPlaycount()) , "pcDiffx", "pcDiffy");
+                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getPlaycount() - userInDB.getPlaycount()), "pcDiffx", "pcDiffy");
 
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + Integer.toString(0) , "pcDiffx", "pcDiffy");
+                        "↑" + Integer.toString(0), "pcDiffx", "pcDiffy");
 
             }
 
@@ -318,10 +325,10 @@ public class imgUtil {
                     < userFromAPI.getCount50() + userFromAPI.getCount100() + userFromAPI.getCount300()) {
                 //同理不写蓝色部分
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getCount50() + userFromAPI.getCount100() + userFromAPI.getCount300() - (userInDB.getCount50() + userInDB.getCount100() + userInDB.getCount300())) , "tthDiffx", "tthDiffy");
+                        "↑" + new DecimalFormat("###,###").format(userFromAPI.getCount50() + userFromAPI.getCount100() + userFromAPI.getCount300() - (userInDB.getCount50() + userInDB.getCount100() + userInDB.getCount300())), "tthDiffx", "tthDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "diffSize",
-                        "↑" + Integer.toString(0) , "tthDiffx", "tthDiffy");
+                        "↑" + Integer.toString(0), "tthDiffx", "tthDiffy");
             }
             //绘制level变化
             if (Float.valueOf(new DecimalFormat("##0.00").format(userInDB.getLevel())) < Float.valueOf(new DecimalFormat("##0.00").format(userFromAPI.getLevel()))) {
@@ -337,40 +344,40 @@ public class imgUtil {
             if (userInDB.getCount_rank_ss() > userFromAPI.getCount_rank_ss()) {
                 //如果查询的SS比凌晨的少
                 draw(g2, "downColor", "diffFont", "countDiffSize",
-                        "↓" + Integer.toString(userInDB.getCount_rank_ss() - userFromAPI.getCount_rank_ss()) , "ssCountDiffx", "ssCountDiffy");
+                        "↓" + Integer.toString(userInDB.getCount_rank_ss() - userFromAPI.getCount_rank_ss()), "ssCountDiffx", "ssCountDiffy");
             } else if (userInDB.getCount_rank_ss() < userFromAPI.getCount_rank_ss()) {
                 //如果SS变多了
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "↑" + Integer.toString(userFromAPI.getCount_rank_ss() - userInDB.getCount_rank_ss()) , "ssCountDiffx", "ssCountDiffy");
+                        "↑" + Integer.toString(userFromAPI.getCount_rank_ss() - userInDB.getCount_rank_ss()), "ssCountDiffx", "ssCountDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "↑" + Integer.toString(0) , "ssCountDiffx", "ssCountDiffy");
+                        "↑" + Integer.toString(0), "ssCountDiffx", "ssCountDiffy");
             }
             //s
             if (userInDB.getCount_rank_s() > userFromAPI.getCount_rank_s()) {
                 //如果查询的S比凌晨的少
                 draw(g2, "downColor", "diffFont", "countDiffSize",
-                        "↓" + Integer.toString(userInDB.getCount_rank_s() - userFromAPI.getCount_rank_s()) , "sCountDiffx", "sCountDiffy");
+                        "↓" + Integer.toString(userInDB.getCount_rank_s() - userFromAPI.getCount_rank_s()), "sCountDiffx", "sCountDiffy");
             } else if (userInDB.getCount_rank_s() < userFromAPI.getCount_rank_s()) {
                 //如果S变多了
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "↑" + Integer.toString(userFromAPI.getCount_rank_s() - userInDB.getCount_rank_s()) , "sCountDiffx", "sCountDiffy");
+                        "↑" + Integer.toString(userFromAPI.getCount_rank_s() - userInDB.getCount_rank_s()), "sCountDiffx", "sCountDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "↑" + Integer.toString(0) , "sCountDiffx", "sCountDiffy");
+                        "↑" + Integer.toString(0), "sCountDiffx", "sCountDiffy");
             }
             //a
             if (userInDB.getCount_rank_a() > userFromAPI.getCount_rank_a()) {
                 //如果查询的S比凌晨的少
                 draw(g2, "downColor", "diffFont", "countDiffSize",
-                        "↓" + Integer.toString(userInDB.getCount_rank_a() - userFromAPI.getCount_rank_a()) , "aCountDiffx", "aCountDiffy");
+                        "↓" + Integer.toString(userInDB.getCount_rank_a() - userFromAPI.getCount_rank_a()), "aCountDiffx", "aCountDiffy");
             } else if (userInDB.getCount_rank_a() < userFromAPI.getCount_rank_a()) {
                 //如果S变多了
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "↑" + Integer.toString(userFromAPI.getCount_rank_a() - userInDB.getCount_rank_a()) , "aCountDiffx", "aCountDiffy");
+                        "↑" + Integer.toString(userFromAPI.getCount_rank_a() - userInDB.getCount_rank_a()), "aCountDiffx", "aCountDiffy");
             } else {
                 draw(g2, "upColor", "diffFont", "countDiffSize",
-                        "↑" + Integer.toString(0) , "aCountDiffx", "aCountDiffy");
+                        "↑" + Integer.toString(0), "aCountDiffx", "aCountDiffy");
             }
         }
         g2.dispose();
@@ -386,7 +393,7 @@ public class imgUtil {
 
     public String drawUserBP(User user, List<BP> list) {
         //思路：获取list的大小，把每个list成员的.getbeatmapName信息绘制到图片上
-        logger.info("开始绘制"+user.getUsername()+"的今日BP信息");
+        logger.info("开始绘制" + user.getUsername() + "的今日BP信息");
         BufferedImage bpTop;
         BufferedImage A;
         BufferedImage B;
@@ -440,14 +447,14 @@ public class imgUtil {
         }
         logger.info("载入背景、rank小图标完成");
         //规划出结果图的尺寸(2行BP数量*2行BP图高度+3行BP数量*3行BP高度)
-        BufferedImage result = new BufferedImage(width, bpMid2Height * (1+bp2.size()) + bpMid3Height * +bp3.size(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage result = new BufferedImage(width, bpMid2Height * (1 + bp2.size()) + bpMid3Height * +bp3.size(), BufferedImage.TYPE_INT_RGB);
 
 
         //在头部图片上绘制用户名
         Graphics2D g2 = (Graphics2D) bpTop.getGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        draw(g2, "bpUnameColor", "bpUnameFont", "bpUnameSize", "Best Performance of " +user.getUsername(), "bpUnamex", "bpUnamey");
-        draw(g2,"bpQueryDateColor","bpQueryDateFont","bpQueryDateSize",new SimpleDateFormat("yy-MM-dd").format(Calendar.getInstance().getTime()),"bpQueryDatex","bpQueryDatey");
+        draw(g2, "bpUnameColor", "bpUnameFont", "bpUnameSize", "Best Performance of " + user.getUsername(), "bpUnamex", "bpUnamey");
+        draw(g2, "bpQueryDateColor", "bpQueryDateFont", "bpQueryDateSize", new SimpleDateFormat("yy-MM-dd").format(Calendar.getInstance().getTime()), "bpQueryDatex", "bpQueryDatey");
         g2.dispose();
         //将头部图片转换为数组
         int[] ImageArrayTop = new int[width * bpTopHeight];
@@ -504,14 +511,14 @@ public class imgUtil {
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp2Modx", "bp2Mody");
             //绘制PP
-            draw(g, "bpPPColor", "bpPPFont", "bpPPSize", Integer.toString(Math.round(bp2.get(i).getPp()))+"pp", "bp2PPx", "bp2PPy");
+            draw(g, "bpPPColor", "bpPPFont", "bpPPSize", Integer.toString(Math.round(bp2.get(i).getPp())) + "pp", "bp2PPx", "bp2PPy");
             g.dispose();
             //将它变成数组
             int[] ImageArray = new int[width * bpMid2Height];
             ImageArray = bpmids2.get(i).getRGB(0, 0, width, bpMid2Height, ImageArray, 0, width);
             //横坐标是0，纵坐标是i+1*每个格子的高度，大小是每个格子的宽高
             result.setRGB(0, bpMid2Height * (i + 1), width, bpMid2Height, ImageArray, 0, width);//将数组写入缓冲图片
-            logger.info("绘制"+bp2.get(i).getBeatmap_name()+"完成");
+            logger.info("绘制" + bp2.get(i).getBeatmap_name() + "完成");
         }
         logger.info("无需使用大背景的BP绘制完成");
         for (int i = 0; i < bp3.size(); i++) {
@@ -555,10 +562,10 @@ public class imgUtil {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             //开始绘制谱面名称，三行BP需要分割字符串
             //取80个字符中的最后一个空格
-            draw(g, "bpNameColor", "bpNameFont", "bpNameSize", bp3.get(i).getBeatmap_name().substring(0, bp3.get(i).getBeatmap_name().substring(0, Integer.valueOf(rb.getString("bplimit"))+1).lastIndexOf(" ") + 1),
-            "bp3Namex", "bp3Namey");
+            draw(g, "bpNameColor", "bpNameFont", "bpNameSize", bp3.get(i).getBeatmap_name().substring(0, bp3.get(i).getBeatmap_name().substring(0, Integer.valueOf(rb.getString("bplimit")) + 1).lastIndexOf(" ") + 1),
+                    "bp3Namex", "bp3Namey");
             //第二行
-            draw(g, "bpNameColor", "bpNameFont", "bpNameSize", bp3.get(i).getBeatmap_name().substring(bp3.get(i).getBeatmap_name().substring(0, Integer.valueOf(rb.getString("bplimit"))+1).lastIndexOf(" ") + 1, bp3.get(i).getBeatmap_name().length())
+            draw(g, "bpNameColor", "bpNameFont", "bpNameSize", bp3.get(i).getBeatmap_name().substring(bp3.get(i).getBeatmap_name().substring(0, Integer.valueOf(rb.getString("bplimit")) + 1).lastIndexOf(" ") + 1, bp3.get(i).getBeatmap_name().length())
                             + "(" + new DecimalFormat("###.00").format(100.0 * (6 * bp3.get(i).getCount300() + 2 * bp3.get(i).getCount100() + bp3.get(i).getCount50()) / (6 * (bp3.get(i).getCount50() + bp3.get(i).getCount100() + bp3.get(i).getCount300() + bp3.get(i).getCountmiss()))) + "%)",
                     "bp3Name+1x", "bp3Name+1y");
             //绘制日期(给的就是北京时间，不转)
@@ -567,14 +574,14 @@ public class imgUtil {
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp3Modx", "bp3Mody");
             //绘制PP
-            draw(g, "bpPPColor", "bpPPFont", "bpPPSize", Integer.toString(Math.round(bp3.get(i).getPp()))+"pp", "bp3PPx", "bp3PPy");
+            draw(g, "bpPPColor", "bpPPFont", "bpPPSize", Integer.toString(Math.round(bp3.get(i).getPp())) + "pp", "bp3PPx", "bp3PPy");
             g.dispose();
             //将它变成数组
             int[] ImageArray = new int[width * bpMid3Height];
             ImageArray = bpmids3.get(i).getRGB(0, 0, width, bpMid3Height, ImageArray, 0, width);
             //横坐标是0，纵坐标是i*每个格子的高度（没有头图不用+1），还要加上bp2占用的高度+1（头图。+1在这里），大小是每个格子的宽高
-            result.setRGB(0, bpMid3Height * (i) + bpMid2Height * (bp2.size()+1), width, bpMid3Height, ImageArray, 0, width);
-            logger.info("绘制"+bp3.get(i).getBeatmap_name()+"完成");
+            result.setRGB(0, bpMid3Height * (i) + bpMid2Height * (bp2.size() + 1), width, bpMid3Height, ImageArray, 0, width);
+            logger.info("绘制" + bp3.get(i).getBeatmap_name() + "完成");
         }
         //生成新图片
         try {
@@ -587,22 +594,122 @@ public class imgUtil {
         }
 
 
-
     }
 
 
-    public String drawOneBP(User user, BP bp){
+    public String drawOneBP(User user, BP bp) {
         BufferedImage bg;
+        final Path path = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
         try {
             //此处传入的应该是用户的数字id
             bg = pageUtil.getBG(bp.getBeatmap_id());
         } catch (IOException | NullPointerException e) {
-            logger.error("从官网获取头像失败");
+            logger.error("从血猫抓取谱面背景失败");
             logger.error(e.getMessage());
             return "error";
         }
-        //TODO 绘制结算界面
-        // 当一定时间/一定条数内 同样消息出现五条之后，开始缓冲消息，到100条谁说了第六条就谁复读，判定到复读之后判定是否群管，如果是群管复读艾特群主，如果是群主。。什么也不做（x
+        //使用NIO扫描文件夹
+        final List<File> files = new ArrayList<File>();
+        List<BufferedImage> Images = new ArrayList<>();
+        SimpleFileVisitor<Path> finder = new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                files.add(file.toFile());
+                return super.visitFile(file, attrs);
+            }
+        };
+        try {
+            java.nio.file.Files.walkFileTree(path, finder);
+            for (int i = 0; i < files.size(); i++) {
+                Images.add(ImageIO.read(files.get(i)));
+            }
+        } catch (IOException e) {
+            logger.error("读取BP布局图片失败");
+            logger.error(e.getMessage());
+            return "error";
+        }
+
+
+
+
+        //获取bp原分辨率，将宽拉到1366，然后算出高，减去768除以二然后上下各减掉这部分
+        int resizedHeight = (int) ((float) bg.getHeight() / bg.getWidth()) * 1366;
+        int diff = (resizedHeight - 768) / 2 + 1;
+        //把BG横向拉到1366
+        Graphics2D g = (Graphics2D) bg.createGraphics();
+        g.drawImage(bg.getScaledInstance(1366, resizedHeight, Image.SCALE_SMOOTH), 0, 0, 1366, resizedHeight, null);
+        g.dispose();
+        //切割图片
+        BufferedImage resizedBG = new BufferedImage(1366, 768, bg.getType());
+        for (int x = 0; x < 1366; ++x) {
+            for (int y = diff; y < bg.getHeight() - diff; ++y) {
+                resizedBG.setRGB(x, y, bg.getRGB(x, y));
+            }
+        }
+        //刷新掉bg的缓冲，将其作废
+        bg.flush();
+
+        //整体暗化20%
+        RescaleOp op = new RescaleOp(2.5f, 0, null);
+        resizedBG = op.filter(resizedBG, null);
+        Graphics2D g2 = (Graphics2D) resizedBG.getGraphics();
+
+        //画上各个元素，这里Images按文件名排序
+        //顶端banner
+        g2.drawImage(Images.get(0), 0, 0, null);
+        //右下角两个FPS
+        g2.drawImage(Images.get(1), 1267, 699, null);
+        g2.drawImage(Images.get(2), 1267, 723, null);
+        //左下角返回
+        g2.drawImage(Images.get(3), 0, 568, null);
+        //右下角OnlineUsers/ShowChat
+        g2.drawImage(Images.get(4), 1148, 747, null);
+        g2.drawImage(Images.get(5), 1274, 747, null);
+        //右下角replay
+        g2.drawImage(Images.get(6), 1026-58, 549-31, null);
+        //rank
+        switch (bp.getRank()) {
+            case "A":
+                g2.drawImage(Images.get(7), 1131-245, 341-242, null);
+                break;
+            case "B":
+                g2.drawImage(Images.get(8), 1131-245, 341-242, null);
+                break;
+            case "C":
+                g2.drawImage(Images.get(9), 1131-245, 341-242, null);
+                break;
+            case "D":
+                g2.drawImage(Images.get(10), 1131-245, 341-242, null);
+                break;
+            case "X":
+                g2.drawImage(Images.get(16), 1131-245, 341-242, null);
+                break;
+            case "XH":
+                g2.drawImage(Images.get(17), 1131-245, 341-242, null);
+                break;
+            case "S":
+                g2.drawImage(Images.get(13), 1131-245, 341-242, null);
+                break;
+            case "SH":
+                g2.drawImage(Images.get(14), 1131-245, 341-242, null);
+                break;
+        }
+        //右上角Ranking
+        g2.drawImage(Images.get(15), 1029-66, 0, null);
+        //RankGraph
+        g2.drawImage(Images.get(11), 270-14, 613-5, null);
+
+
+        //FC
+        if(bp.getPerfect()==1) {
+            g2.drawImage(Images.get(12), 296 - 30, 675 - 37, null);
+        }
+
+        //分数
+
+        //写字
+
+
         return null;
     }
 
