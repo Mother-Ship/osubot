@@ -148,7 +148,12 @@ public class apiUtil {
         //传入的是北京时间……
 
         Calendar c = Calendar.getInstance();
+//        凌晨四点之前，将日期减一
+        if(c.get(Calendar.HOUR_OF_DAY)<4){
+            c.add(Calendar.DATE,-1);
+        }
         c.set(Calendar.HOUR_OF_DAY, 4);
+
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
         List<BP> result = new ArrayList<>();

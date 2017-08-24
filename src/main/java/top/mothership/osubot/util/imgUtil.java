@@ -447,7 +447,8 @@ public class imgUtil {
         //在头部图片上绘制用户名
         Graphics2D g2 = (Graphics2D) bpTop.getGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        draw(g2, "bpUnameColor", "bpUnameFont", "bpUnameSize", user.getUsername()+"'s Today BP", "bpUnamex", "bpUnamey");
+        draw(g2, "bpUnameColor", "bpUnameFont", "bpUnameSize", "Best Performance of " +user.getUsername(), "bpUnamex", "bpUnamey");
+        draw(g2,"bpQueryDateColor","bpQueryDateFont","bpQueryDateSize",new SimpleDateFormat("yy-MM-dd").format(Calendar.getInstance().getTime()),"bpQueryDatex","bpQueryDatey");
         g2.dispose();
         //将头部图片转换为数组
         int[] ImageArrayTop = new int[width * bpTopHeight];

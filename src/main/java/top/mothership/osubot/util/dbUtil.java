@@ -252,9 +252,10 @@ public class dbUtil {
     }
 
     public void clearTodayData() {
-        //由于凌晨4点录入数据时，所有合法的数据是上一批凌晨4点，也就是数据库中记载着昨天的记录。那么我只需要删掉今天的记录就行了。
+        //24号所有合法数据是23号，25号早上录入数据应该删除所有24号的数据
         Calendar cl = Calendar.getInstance();
-        String sql = "DELETE * FROM `userinfo` WHERE `queryDate` = ?";
+        cl.add(Calendar.DATE,-1);
+        String sql = "DELETE FROM `userinfo` WHERE `queryDate` = ?";
         logger.info("正在清除当日临时数据");
         try (Connection c = getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
