@@ -190,7 +190,7 @@ public class imgUtil {
         draw(g2, "defaultColor", "numberFont", "rankSize", "#" + userFromAPI.getPp_rank(), "rankx", "ranky");
 
         //绘制PP
-        draw(g2, "ppColor", "numberFont", "ppSize", userFromAPI.getPp_raw().toString(), "ppx", "ppy");
+        draw(g2, "ppColor", "numberFont", "ppSize", String.valueOf(userFromAPI.getPp_raw()), "ppx", "ppy");
 
 
         if (scoreRank > 0) {
@@ -202,7 +202,7 @@ public class imgUtil {
                 new DecimalFormat("###,###").format(userFromAPI.getRanked_score()), "rScorex", "rScorey");
         //绘制acc
         draw(g2, "defaultColor", "numberFont", "numberSize",
-                new DecimalFormat("###.00").format(userFromAPI.getAccuracy()) + "%", "accx", "accy");
+                new DecimalFormat("#00.00").format(userFromAPI.getAccuracy()) + "%", "accx", "accy");
 
         //绘制pc
         draw(g2, "defaultColor", "numberFont", "numberSize",
