@@ -26,7 +26,7 @@ public class imgUtilTest extends TestCase {
         bp.setBeatmap_id(53554);
         bp.setRank("XH");
         bp.setPerfect(1);
-        imgUtil.drawOneBP(null,bp);
+
     }
 
 }

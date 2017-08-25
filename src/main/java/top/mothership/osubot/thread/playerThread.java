@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import top.mothership.osubot.pojo.BP;
+import top.mothership.osubot.pojo.Map;
 import top.mothership.osubot.pojo.User;
 import top.mothership.osubot.util.apiUtil;
 import top.mothership.osubot.util.dbUtil;
@@ -13,10 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 
 public class playerThread extends Thread {
@@ -83,7 +81,7 @@ public class playerThread extends Thread {
             } else {
                 username = msg.substring(6);
             }
-            if("白菜".equals(username)){
+            if ("白菜".equals(username)) {
                 sendGroupMsg("唉，没人疼没人爱，我是地里一颗小白菜。");
                 return;
             }
@@ -134,13 +132,20 @@ public class playerThread extends Thread {
 
 
         if ("bp".equals(msg.substring(1, 3))) {
-            String username = msg.substring(4);
-            logger.info("接收到玩家" + username + "的BP查询请求");
             String param = null;
+            String username = null;
+            String filename = null;
             if (msg.contains("#")) {
-               int index = msg.indexOf("#");
-               param = msg.substring(index + 1);
+                int index = msg.indexOf("#");
+                param = msg.substring(index + 1);
+                username = msg.substring(4, index);
+            } else {
+                username = msg.substring(4);
             }
+
+
+            logger.info("接收到玩家" + username + "的BP查询请求");
+
 
             User user = apiUtil.getUser(username, 0);
             if (user == null) {
@@ -157,58 +162,81 @@ public class playerThread extends Thread {
             }
             logger.info("开始获取玩家" + user.getUsername() + "的今日BP");
             List<BP> list = apiUtil.getTodayBP(user.getUsername(), 0);
-            if (list.size() == 0) {
-                sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
-                logger.info("没有查到该玩家今天更新的BP");
-                return;
+            Calendar c = Calendar.getInstance();
+//        凌晨四点之前，将日期减一
+            if (c.get(Calendar.HOUR_OF_DAY) < 4) {
+                c.add(Calendar.DATE, -1);
             }
+            c.set(Calendar.HOUR_OF_DAY, 4);
+
+            c.set(Calendar.MINUTE, 0);
+            c.set(Calendar.SECOND, 0);
+            List<BP> result = new ArrayList<>();
 
             for (BP aList : list) {
-                //对BP进行遍历，请求API将名称写入
-                logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
-                String name = apiUtil.getMapName(aList.getBeatmap_id());
-                aList.setBeatmap_name(name);
+                //对BP进行遍历，如果产生时间晚于当天凌晨4点
+                if (aList.getDate().after(c.getTime())) {
+                    result.add(aList);
+                }
             }
-            String filename = null;
-            if(param==null) {
+
+            if (param == null) {
+                logger.info("筛选今日BP成功");
+                if (result.size() == 0) {
+                    sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
+                    logger.info("没有查到该玩家今天更新的BP");
+                    return;
+                }
+
+                for (BP aList : result) {
+                    //对BP进行遍历，请求API将名称写入
+                    logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
+                    Map map = apiUtil.getMapDetail(aList.getBeatmap_id());
+                    aList.setBeatmap_name(map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]");
+                }
+
                 logger.info("正在绘制今日BP");
-                filename = imgUtil.drawUserBP(user, list);
+                filename = imgUtil.drawUserBP(user, result);
                 if (filename.equals("error")) {
                     sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
                 }
                 sendGroupMsg("[CQ:image,file=" + filename + "]");
-            }else{
+            } else {
                 //nearest
-                if("n".equals(param)){
-                    logger.info("正在绘制最近BP");
+                if ("n".equals(param)) {
+                    logger.info("正在对"+user.getUsername()+"的BP进行排序……");
                     //对list中的bp按日期排序
                     BP temp = null;
                     int size = list.size();
-                    for(int i = 0 ; i < size-1; i ++)
-                    {
-                        for(int j = 0 ;j < size-1-i ; j++)
-                        {   //如果j比j+1晚
-                            if(list.get(j).getDate().after(list.get(j+1).getDate()))
-                            {   //把j+1给j 把j给j+1
+                    for (int i = 0; i < size - 1; i++) {
+                        for (int j = 0; j < size - 1 - i; j++) {   //如果j比j+1晚
+                            if (list.get(j).getDate().before(list.get(j + 1).getDate())) {   //把j+1给j 把j给j+1
                                 temp = list.get(j);
-                                list.set(j,list.get(j+1));
-                                list.set(j+1,temp);
+                                list.set(j, list.get(j + 1));
+                                list.set(j + 1, temp);
                             }
                         }
                     }
                     BP bp = list.get(0);
-                    filename = imgUtil.drawOneBP(user, bp);
+                    logger.info("获得了玩家"+user.getUsername()+"的最近BP：" +bp.getBeatmap_id()+ "，正在获取歌曲名称");
+                    Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
+
+                    filename = imgUtil.drawOneBP(user, bp,map);
                     if (filename.equals("error")) {
                         sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
                     }
                     sendGroupMsg("[CQ:image,file=" + filename + "]");
-                }else{
+                } else {
                     sendGroupMsg("不，不行，不能这样");
                     logger.info("传入了没有用的参数");
                     logger.info("线程" + this.getName() + "处理完毕，已经退出");
                     return;
                 }
             }
+
+
+
+
             try {
                 logger.info("线程暂停两秒，以免发送成功前删除文件");
                 Thread.sleep(2000);
@@ -219,7 +247,6 @@ public class playerThread extends Thread {
             File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
             f.delete();
         }
-
 
 
         logger.info("线程" + this.getName() + "处理完毕，已经退出");

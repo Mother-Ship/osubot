@@ -64,8 +64,6 @@ public class apiUtil {
                     retry++;
                     continue;
                 }
-
-
                 //读取返回结果
                 BufferedReader responseBuffer =
                         new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
@@ -130,7 +128,7 @@ public class apiUtil {
                 //手动关闭流
                 httpConnection.disconnect();
                 responseBuffer.close();
-                logger.info("获得了" + username + "玩家的前100BP，正在筛选今日BP");
+                logger.info("获得了" + username + "玩家的前100BP");
                 //定义返回的List
                 Type listType = new TypeToken<List<BP>>() {
                 }.getType();
@@ -147,29 +145,12 @@ public class apiUtil {
         }
         //传入的是北京时间……
 
-        Calendar c = Calendar.getInstance();
-//        凌晨四点之前，将日期减一
-        if(c.get(Calendar.HOUR_OF_DAY)<4){
-            c.add(Calendar.DATE,-1);
-        }
-        c.set(Calendar.HOUR_OF_DAY, 4);
 
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        List<BP> result = new ArrayList<>();
-
-        for (BP aList : list) {
-            //对BP进行遍历，如果产生时间晚于当天凌晨4点
-            if (aList.getDate().after(c.getTime())) {
-                result.add(aList);
-            }
-        }
-        logger.info("筛选今日BP成功");
-        return result;
+        return list;
     }
 
 
-    public String getMapName(int bid){
+    public Map getMapDetail(int bid){
         HttpURLConnection httpConnection = null;
         String output = null;
         int retry = 0;
@@ -211,6 +192,7 @@ public class apiUtil {
         //组装实体类
         Map map = new Gson().fromJson(output, Map.class);
         //组装返回字符串
-        return map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]";
+        return map;
+
     }
 }

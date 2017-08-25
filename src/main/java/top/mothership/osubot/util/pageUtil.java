@@ -8,7 +8,10 @@ import org.jsoup.select.Elements;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
@@ -27,8 +30,43 @@ public class pageUtil {
     }
 
     public BufferedImage getBG(int bid)throws IOException {
-        URL avaurl = new URL(getBGURL + bid);
-        return ImageIO.read(avaurl);
+        HttpURLConnection httpConnection = null;
+        int retry = 0;
+        BufferedImage img = null;
+        while (retry < 5) {
+            try {
+                httpConnection =
+                        (HttpURLConnection) new URL(getBGURL + bid).openConnection();
+                httpConnection.setRequestMethod("GET");
+                httpConnection.setConnectTimeout(5000);
+                httpConnection.setReadTimeout(5000);
+                httpConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.40 Safari/537.36");
+                if (httpConnection.getResponseCode() != 200) {
+                    logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
+                    retry++;
+                    continue;
+                }
+                //读取返回结果
+                Thread.sleep(2000);
+                img = ImageIO.read(httpConnection.getInputStream());
+                //手动关闭流
+                httpConnection.disconnect();
+
+                break;
+            } catch (IOException e) {
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
+                retry++;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+        if (retry == 5) {
+            logger.error("获取" + bid + "的背景图，失败五次");
+            throw new IOException();
+        }
+        return img;
+
     }
     //1.1预计功能：获取reps watched，获取score rank,欢迎新人
     //

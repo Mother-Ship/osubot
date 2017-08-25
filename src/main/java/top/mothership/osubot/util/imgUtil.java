@@ -1,8 +1,10 @@
 package top.mothership.osubot.util;
 
+import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import top.mothership.osubot.pojo.BP;
+import top.mothership.osubot.pojo.Map;
 import top.mothership.osubot.pojo.User;
 
 import javax.imageio.ImageIO;
@@ -18,10 +20,8 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.*;
 import java.util.List;
-import java.util.ResourceBundle;
 
 public class imgUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
@@ -48,7 +48,7 @@ public class imgUtil {
 
     }
 
-    public String convertMOD(Integer bp) {
+    public List<String> convertMOD(Integer bp) {
         String modBin = Integer.toBinaryString(bp);
         //反转mod
         modBin = new StringBuffer(modBin).reverse().toString();
@@ -101,7 +101,7 @@ public class imgUtil {
         if (mods.contains("PF")) {
             mods.remove("SD");
         }
-        return mods.toString().substring(1, mods.toString().length() - 1);
+        return mods;
     }
 
     public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
@@ -202,7 +202,7 @@ public class imgUtil {
                 new DecimalFormat("###,###").format(userFromAPI.getRanked_score()), "rScorex", "rScorey");
         //绘制acc
         draw(g2, "defaultColor", "numberFont", "numberSize",
-                new DecimalFormat("#00.00").format(userFromAPI.getAccuracy()) + "%", "accx", "accy");
+                new DecimalFormat("##0.00").format(userFromAPI.getAccuracy()) + "%", "accx", "accy");
 
         //绘制pc
         draw(g2, "defaultColor", "numberFont", "numberSize",
@@ -466,7 +466,7 @@ public class imgUtil {
         for (int i = 0; i < bp2.size(); i++) {
             String mods;
             if (bp2.get(i).getEnabled_mods() > 0) {
-                mods = convertMOD(bp2.get(i).getEnabled_mods());
+                mods = convertMOD(bp2.get(i).getEnabled_mods()).toString().substring(1, convertMOD(bp2.get(i).getEnabled_mods()).toString().length() - 1);
             } else {
                 mods = "None";
             }
@@ -524,7 +524,7 @@ public class imgUtil {
         for (int i = 0; i < bp3.size(); i++) {
             String mods;
             if (bp3.get(i).getEnabled_mods() > 0) {
-                mods = convertMOD(bp3.get(i).getEnabled_mods());
+                mods = convertMOD(bp2.get(i).getEnabled_mods()).toString().substring(1, convertMOD(bp2.get(i).getEnabled_mods()).toString().length() - 1);
             } else {
                 mods = "None";
             }
@@ -597,7 +597,8 @@ public class imgUtil {
     }
 
 
-    public String drawOneBP(User user, BP bp) {
+    public String drawOneBP(User user, BP bp, Map map) {
+        logger.info("开始绘制"+map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]的结算界面");
         BufferedImage bg;
         final Path path = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
         try {
@@ -611,6 +612,8 @@ public class imgUtil {
         //使用NIO扫描文件夹
         final List<File> files = new ArrayList<File>();
         List<BufferedImage> Images = new ArrayList<>();
+        List<BufferedImage> Nums = new ArrayList<>();
+        List<BufferedImage> Mods = new ArrayList<>();
         SimpleFileVisitor<Path> finder = new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -619,33 +622,40 @@ public class imgUtil {
             }
         };
         try {
+            //将所有文件分为三个List
             java.nio.file.Files.walkFileTree(path, finder);
-            for (int i = 0; i < files.size(); i++) {
+            for (int i = 0; i < 22; i++) {
                 Images.add(ImageIO.read(files.get(i)));
             }
+            for (int i = 22; i < 36; i++) {
+                Nums.add(ImageIO.read(files.get(i)));
+            }
+            for (int i = 36; i < 47; i++) {
+                Mods.add(ImageIO.read(files.get(i)));
+            }
+
         } catch (IOException e) {
             logger.error("读取BP布局图片失败");
             logger.error(e.getMessage());
             return "error";
         }
 
-
-
-
         //获取bp原分辨率，将宽拉到1366，然后算出高，减去768除以二然后上下各减掉这部分
-        int resizedHeight = Math.round ((float) bg.getHeight() / bg.getWidth() * 1366) -1;
+        int resizedHeight = (int) Math.ceil((float) bg.getHeight() / bg.getWidth() * 1366);
+        int diff = (int) Math.ceil((resizedHeight - 768) / 2);
 
-        int diff = (int)(resizedHeight - 768) / 2 + 1;
-        //把BG横向拉到1366
+        //把BG横向拉到1366;
         BufferedImage resizedBGTmp = new BufferedImage(1366, resizedHeight, bg.getType());
         Graphics2D g = (Graphics2D) resizedBGTmp.createGraphics();
         g.drawImage(bg.getScaledInstance(1366, resizedHeight, Image.SCALE_SMOOTH), 0, 0, 1366, resizedHeight, null);
         g.dispose();
+
         //切割图片
         BufferedImage resizedBG = new BufferedImage(1366, 768, bg.getType());
         for (int x = 0; x < 1365; x++) {
-            for (int y = diff; y < bg.getHeight() - diff; y++) {
-                resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x, y));
+            //这里之前用了原bg拉伸之前的分辨率，难怪报错
+            for (int y = 0; y < 767; y++) {
+                resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x, y + diff));
             }
         }
         //刷新掉bg的缓冲，将其作废
@@ -660,61 +670,216 @@ public class imgUtil {
         //顶端banner
         g2.drawImage(Images.get(0), 0, 0, null);
         //右下角两个FPS
-        g2.drawImage(Images.get(1), 1267, 699, null);
-        g2.drawImage(Images.get(2), 1267, 723, null);
+        g2.drawImage(Images.get(1), 1300, 699, null);
+        g2.drawImage(Images.get(2), 1300, 723, null);
         //左下角返回
-        g2.drawImage(Images.get(3), 0, 568, null);
+        g2.drawImage(Images.get(7), 0, 568, null);
         //右下角OnlineUsers/ShowChat
-        g2.drawImage(Images.get(4), 1148, 747, null);
-        g2.drawImage(Images.get(5), 1274, 747, null);
+        g2.drawImage(Images.get(8), 1178, 746, null);
+        g2.drawImage(Images.get(9), 1274, 746, null);
         //右下角replay
-        g2.drawImage(Images.get(6), 1026-58, 549-31, null);
+        g2.drawImage(Images.get(10), 1026 - 58, 549 - 31, null);
         //rank
         switch (bp.getRank()) {
             case "A":
-                g2.drawImage(Images.get(7), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(11).getScaledInstance(Images.get(11).getWidth(), Images.get(11).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "B":
-                g2.drawImage(Images.get(8), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(12).getScaledInstance(Images.get(12).getWidth(), Images.get(12).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "C":
-                g2.drawImage(Images.get(9), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(13).getScaledInstance(Images.get(13).getWidth(), Images.get(13).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "D":
-                g2.drawImage(Images.get(10), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(14).getScaledInstance(Images.get(14).getWidth(), Images.get(14).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "X":
-                g2.drawImage(Images.get(16), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(20).getScaledInstance(Images.get(20).getWidth(), Images.get(20).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "XH":
-                g2.drawImage(Images.get(17), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(21).getScaledInstance(Images.get(21).getWidth(), Images.get(21).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "S":
-                g2.drawImage(Images.get(13), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(17).getScaledInstance(Images.get(17).getWidth(), Images.get(17).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "SH":
-                g2.drawImage(Images.get(14), 1131-245, 341-242, null);
+                g2.drawImage(Images.get(18).getScaledInstance(Images.get(18).getWidth(), Images.get(18).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
         }
         //右上角Ranking
-        g2.drawImage(Images.get(15), 1029-66, 0, null);
+        g2.drawImage(Images.get(19), 1029 - 66, 0, null);
         //RankGraph
-        g2.drawImage(Images.get(11), 270-14, 613-5, null);
+        g2.drawImage(Images.get(15), 270 - 14, 613 - 6, null);
 
 
         //FC
-        if(bp.getPerfect()==1) {
-            g2.drawImage(Images.get(12), 296 - 30, 675 - 37, null);
+        if (bp.getPerfect() == 1) {
+            g2.drawImage(Images.get(16), 296 - 30, 675 - 37, null);
         }
 
-        //分数
+        //分数 图片扩大到1.27倍
+        //分数是否上e，每个数字的位置都不一样
+        if (bp.getScore() > 99999999) {
+            char[] Score = String.valueOf(bp.getScore()).toCharArray();
+            for (int i = 0; i < Score.length; i++) {
+                //第二个参数是数字之间的距离+第一个数字离最左边的距离
+                g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Score[i]))), 55 * i + 128 - 21, 173 - 55, null);
+            }
+        } else {
+            char[] Score = String.valueOf(bp.getScore()).toCharArray();
+
+            for (int i = 0; i < 8; i++) {
+                if (Score.length < 8) {
+                    //如果分数不到8位，左边用0补全
+                    //获取Score的长度和8的差距，然后把i小于等于这个差距的时候画的数字改成0
+                    if (i < 8 - Score.length) {
+                        g2.drawImage(Nums.get(0), 55 * i + 141 - 6, 173 - 55, null);
+                    } else {
+                        //第一次应该拿的是数组里第0个字符
+                        g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Score[i - 8 + Score.length]))), 55 * i + 141 - 6, 173 - 55, null);
+                    }
+
+                } else {
+                    //直接绘制
+                    g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Score[i]))), 55 * i + 141 - 6, 173 - 55, null);
+                }
+            }
+        }
+        //combo
+        char[] Combo = String.valueOf(bp.getMaxcombo()).toCharArray();
+        for (int i = 0; i < Combo.length; i++) {
+            //第二个参数是数字之间的距离+第一个数字离最左边的距离
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Combo[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 30 - 7, 576 - 55+10, null);
+        }
+        //画上结尾的x
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Combo.length + 30 - 7, 576 - 55+10, null);
+
+        //300 这些图片应该缩小到一半大小
+        g2.drawImage(Images.get(5), 40 - 4, 263 - 27, null);
+        g2.drawImage(Images.get(5), 360 - 4, 263 - 27, null);
+        char[] Count300 = String.valueOf(bp.getCount300()).toCharArray();
+        for (int i = 0; i < Count300.length; i++) {
+            //第二个参数是数字之间的距离+第一个数字离最左边的距离
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Count300[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 134 - 7, 238 - 7, null);
+        }
+        //画上结尾的x
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Count300.length + 134 - 7, 238 - 7, null);
+
+        //激
+        char[] CountGeki = String.valueOf(bp.getCountgeki()).toCharArray();
+        for (int i = 0; i < CountGeki.length; i++) {
+            //第二个参数是数字之间的距离+第一个数字离最左边的距离
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(CountGeki[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 455 - 8, 238 - 7, null);
+        }
+        //画上结尾的x
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * CountGeki.length + 455 - 8, 238 - 7, null);
+
+        //100
+        g2.drawImage(Images.get(4), 44 - 5, 346 - 8, null);
+        g2.drawImage(Images.get(4), 364 - 5, 346 - 8, null);
+        char[] Count100 = String.valueOf(bp.getCount100()).toCharArray();
+        for (int i = 0; i < Count100.length; i++) {
+            //第二个参数是数字之间的距离+第一个数字离最左边的距离
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Count100[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 134 - 7, 374 - 55, null);
+        }
+        //画上结尾的x
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Count100.length + 134 - 7, 374 - 55, null);
+
+        //喝
+        char[] CountKatu = String.valueOf(bp.getCountkatu()).toCharArray();
+        for (int i = 0; i < CountKatu.length; i++) {
+            //第二个参数是数字之间的距离+第一个数字离最左边的距离
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(CountKatu[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 455 - 8, 374 - 55, null);
+        }
+        //画上结尾的x
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * CountKatu.length + 455 - 8, 374 - 55, null);
+
+        //50
+        g2.drawImage(Images.get(6), 51 - 5, 455 - 21, null);
+        char[] Count50 = String.valueOf(bp.getCount50()).toCharArray();
+        for (int i = 0; i < Count50.length; i++) {
+            //第二个参数是数字之间的距离+第一个数字离最左边的距离
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Count50[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 134 - 7, 470 - 55, null);
+        }
+        //画上结尾的x
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Count50.length + 134 - 7, 470 - 55, null);
+
+        //x
+        g2.drawImage(Images.get(3), 376 - 4, 437 - 5, null);
+        char[] Count0 = String.valueOf(bp.getCountmiss()).toCharArray();
+        for (int i = 0; i < Count0.length; i++) {
+            //第二个参数是数字之间的距离+第一个数字离最左边的距离
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Count0[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 455 - 8, 470 - 55, null);
+        }
+        //画上结尾的x
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Count0.length + 455 - 8, 470 - 55, null);
+
+        //acc
+        String accS = new DecimalFormat("###.00").format(100.0 * (6 * bp.getCount300() + 2 * bp.getCount100() + bp.getCount50()) / (6 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + bp.getCountmiss())));
+        float acc = Float.valueOf(accS);
+
+        if (acc == 100) {
+            //从最左边的数字开始，先画出100
+            g2.drawImage(Nums.get(1).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 0 + 317 - 8, 576 - 55+10, null);
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 1 + 317 - 8, 576 - 55+10, null);
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 2 + 317 - 8, 576 - 55+10, null);
+            //打点
+            g2.drawImage(Nums.get(11).getScaledInstance(20, 45, Image.SCALE_SMOOTH), 37 * 1 + 407 - 8, 576 - 55+10, null);
+            //从点的右边（+27像素）开始画两个0
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 37 * 1 + 407 - 8, 576 - 55+10, null);
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 37 * 2 + 407 - 8, 576 - 55+10, null);
+            g2.drawImage(Nums.get(12).getScaledInstance(40, 51, Image.SCALE_SMOOTH),  27 * 1+ 407 - 8 +37 * 3, 576 - 55+10, null);
+        } else {
+            //将ACC转化为整数部分、小数点和小数部分
+            char[] aa1 = accS.toCharArray();
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[0]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 0 + 317 - 8+15, 576 - 55+10, null);
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[1]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 1 + 317 - 8+15, 576 - 55+10, null);
+            //打点
+            g2.drawImage(Nums.get(11).getScaledInstance(20, 45, Image.SCALE_SMOOTH),  407 - 8, 576 - 55+15, null);
+
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[3]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1+ 407 - 8, 576 - 55+10, null);
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[4]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1+ 407 - 8 +37 * 1, 576 - 55+10, null);
+            g2.drawImage(Nums.get(12).getScaledInstance(40, 51, Image.SCALE_SMOOTH),  27 * 1+ 407 - 8 +37 * 2, 576 - 55+10, null);
+        }
+
+        //MOD
+        List<String> mods = convertMOD(bp.getEnabled_mods());
+
+        java.util.Map<String,Integer> modMap = new HashMap<>();
+        modMap.put("DT",0);
+        modMap.put("EZ",1);
+        modMap.put("FL",2);
+        modMap.put("HT",3);
+        modMap.put("HR",4);
+        modMap.put("HD",5);
+        modMap.put("NC",6);
+        modMap.put("NF",7);
+        modMap.put("PF",8);
+        modMap.put("SO",9);
+        modMap.put("SD",10);
+        //对mods迭代
+        for (int i=0;i<mods.size();i++){
+            //第一个mod画在1237，第二个画在1237+30,第三个1237-30
+            logger.info("正在绘制mod图标："+mods.get(i));
+            g2.drawImage(Mods.get(modMap.get(mods.get(i))), 1237-(30*i), 375, null);
+        }
+
 
         //写字
-
-            g2.dispose();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //指定颜色
+        g2.setPaint(Color.decode("#FFFFFF"));
+        //指定字体
+        g2.setFont(new Font("Ubuntu", 0, 24));
+        //指定坐标
+        g2.drawString(map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]", 7, 26);
+        g2.setFont(new Font("Ubuntu", 0, 20));
+        g2.drawString("Beatmap by " + map.getCreator(), 7, 52);
+        g2.drawString("Played by " + user.getUsername() + " on " + new SimpleDateFormat("yy/MM/dd HH:mm:ss").format(bp.getDate()) + ".", 7, 74);
+        g2.dispose();
         try {
-            ImageIO.write(resizedBG, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id()+"_"+bp.getDate() + ".png"));
-            return bp.getBeatmap_id()+"_"+bp.getDate() + ".png";
+            ImageIO.write(resizedBG, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png"));
+            return bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png";
         } catch (IOException e) {
             logger.error("绘制图片成品失败");
             logger.error(e.getMessage());

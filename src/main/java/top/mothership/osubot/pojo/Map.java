@@ -4,6 +4,15 @@ public class Map {
     private String artist;
     private String title;
     private String version;
+    private String creator;
+
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
 
     public String getTitle() {
         return title;

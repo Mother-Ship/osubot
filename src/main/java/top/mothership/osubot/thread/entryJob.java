@@ -23,6 +23,10 @@ public class entryJob extends TimerTask {
 
     @Override
     public void run() {
+
+        //清除当日stat时添加的临时数据
+        dbUtil.clearTodayData();
+
         logger.info("开始获取数据");
         List<Integer> list = dbUtil.listUserId();
         for (Integer aList : list) {
@@ -37,8 +41,7 @@ public class entryJob extends TimerTask {
                     e.printStackTrace();
                 }
             }
-            //清除当日stat时添加的临时数据
-            dbUtil.clearTodayData();
+
             dbUtil.addUserInfo(user);
             logger.info("将" + user.getUsername() + "的数据录入成功");
             try {
