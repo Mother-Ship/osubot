@@ -11,7 +11,6 @@ import top.mothership.osubot.util.dbUtil;
 import top.mothership.osubot.util.imgUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -132,12 +131,25 @@ public class playerThread extends Thread {
 
 
         if ("bp".equals(msg.substring(1, 3))) {
-            String param = null;
+            int num = 0;
             String username = null;
             String filename = null;
             if (msg.contains("#")) {
                 int index = msg.indexOf("#");
-                param = msg.substring(index + 1);
+                try {
+                    num = Integer.valueOf(msg.substring(index + 1));
+                    if (num < 0 || num > 100) {
+                        sendGroupMsg("其他人看不到的东西，白菜也看不到啦。");
+                        logger.info("BP不能大于100或者小于0");
+                        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                        return;
+                    }
+                } catch (java.lang.NumberFormatException e) {
+                    sendGroupMsg("Ай-ай-ай-ай-ай, что сейчас произошло!");
+                    logger.info("给的BP数目不是int");
+                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                    return;
+                }
                 username = msg.substring(4, index);
             } else {
                 username = msg.substring(4);
@@ -146,7 +158,10 @@ public class playerThread extends Thread {
 
             logger.info("接收到玩家" + username + "的BP查询请求");
 
-
+            if ("白菜".equals(username)) {
+                sendGroupMsg("大白菜（学名：Brassica rapa pekinensis，异名Brassica campestris pekinensis或Brassica pekinensis）是一种原产于中国的蔬菜，又称“结球白菜”、“包心白菜”、“黄芽白”、“胶菜”等。(via 维基百科)");
+                return;
+            }
             User user = apiUtil.getUser(username, 0);
             if (user == null) {
                 sendGroupMsg("没有在官网查到这个玩家。");
@@ -160,8 +175,8 @@ public class playerThread extends Thread {
                 dbUtil.addUserId(user.getUser_id());
                 dbUtil.addUserInfo(user);
             }
-            logger.info("开始获取玩家" + user.getUsername() + "的今日BP");
-            List<BP> list = apiUtil.getTodayBP(user.getUsername(), 0);
+            logger.info("开始获取玩家" + user.getUsername() + "的BP");
+            List<BP> list = apiUtil.getAllBP(user.getUsername(), 0);
             Calendar c = Calendar.getInstance();
 //        凌晨四点之前，将日期减一
             if (c.get(Calendar.HOUR_OF_DAY) < 4) {
@@ -180,7 +195,7 @@ public class playerThread extends Thread {
                 }
             }
 
-            if (param == null) {
+            if (num == 0) {
                 logger.info("筛选今日BP成功");
                 if (result.size() == 0) {
                     sendGroupMsg("玩家" + user.getUsername() + "今天没有更新BP。");
@@ -199,46 +214,45 @@ public class playerThread extends Thread {
                 filename = imgUtil.drawUserBP(user, result);
                 if (filename.equals("error")) {
                     sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
+                    return;
                 }
                 sendGroupMsg("[CQ:image,file=" + filename + "]");
             } else {
                 //nearest
-                if ("n".equals(param)) {
-                    logger.info("正在对"+user.getUsername()+"的BP进行排序……");
-                    //对list中的bp按日期排序
-                    BP temp = null;
-                    int size = list.size();
-                    for (int i = 0; i < size - 1; i++) {
-                        for (int j = 0; j < size - 1 - i; j++) {   //如果j比j+1晚
-                            if (list.get(j).getDate().before(list.get(j + 1).getDate())) {   //把j+1给j 把j给j+1
-                                temp = list.get(j);
-                                list.set(j, list.get(j + 1));
-                                list.set(j + 1, temp);
-                            }
-                        }
-                    }
-                    BP bp = list.get(0);
-                    logger.info("获得了玩家"+user.getUsername()+"的最近BP：" +bp.getBeatmap_id()+ "，正在获取歌曲名称");
+
+//                    logger.info("正在对"+user.getUsername()+"的BP进行排序……");
+//                    //对list中的bp按日期排序
+//                    BP temp = null;
+//                    int size = list.size();
+//                    for (int i = 0; i < size - 1; i++) {
+//                        for (int j = 0; j < size - 1 - i; j++) {   //如果j比j+1晚
+//                            if (list.get(j).getDate().before(list.get(j + 1).getDate())) {   //把j+1给j 把j给j+1
+//                                temp = list.get(j);
+//                                list.set(j, list.get(j + 1));
+//                                list.set(j + 1, temp);
+//                            }
+//                        }
+//                    }
+                if (num > list.size()) {
+                    sendGroupMsg("该玩家没有打出指定的bp……");
+                    logger.info("请求的bp数比玩家bp总数量大");
+                    return;
+                } else {
+                    //list基于0，得-1
+                    BP bp = list.get(num-1);
+                    logger.info("获得了玩家" + user.getUsername() + "的第"+num+"个BP：" + bp.getBeatmap_id() + "，正在获取歌曲名称");
                     Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
 
-                    filename = imgUtil.drawOneBP(user, bp,map);
+                    filename = imgUtil.drawOneBP(user, bp, map);
                     if (filename.equals("error")) {
                         sendGroupMsg("绘图过程中发生致命错误：本地资源读取失败。");
+                        return;
                     }
                     sendGroupMsg("[CQ:image,file=" + filename + "]");
-                } else {
-                    sendGroupMsg("不，不行，不能这样");
-                    logger.info("传入了没有用的参数");
-                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                    return;
                 }
             }
 
-
-
-
             try {
-                logger.info("线程暂停两秒，以免发送成功前删除文件");
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
                 e.printStackTrace();

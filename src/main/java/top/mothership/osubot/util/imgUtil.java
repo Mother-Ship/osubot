@@ -9,8 +9,7 @@ import top.mothership.osubot.pojo.User;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.RescaleOp;
+import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -658,16 +657,20 @@ public class imgUtil {
                 resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x, y + diff));
             }
         }
-        //刷新掉bg的缓冲，将其作废
+        //刷新掉bg以及临时bg的缓冲，将其作废
+        resizedBGTmp.flush();
+
         bg.flush();
 
-        //整体暗化20%
-        RescaleOp op = new RescaleOp(0.5f, 0, null);
-        resizedBG = op.filter(resizedBG, null);
+
+
+
+
         Graphics2D g2 = (Graphics2D) resizedBG.getGraphics();
 
+
         //画上各个元素，这里Images按文件名排序
-        //顶端banner
+        //顶端banner(下方也暗化了20%，JAVA自带算法容易导致某些图片生成透明图片)
         g2.drawImage(Images.get(0), 0, 0, null);
         //右下角两个FPS
         g2.drawImage(Images.get(1), 1300, 699, null);

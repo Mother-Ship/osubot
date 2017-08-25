@@ -89,7 +89,7 @@ public class apiUtil {
     }
 
     //用来请求API获取今日BP的方法
-    public List<BP> getTodayBP(String username, int userId) {
+    public List<BP> getAllBP(String username, int userId) {
         String URL;
         if(username!=null&&userId==0){
             URL = getBPURL + "?k=" + key + "&type=string&limit=100&u=" + username;
