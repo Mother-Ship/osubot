@@ -33,7 +33,7 @@ public class adminThread extends Thread {
     private ResourceBundle rb;
     private List<String> admin;
     private boolean group = false;
-
+//TODO 将adminThread识别方式改成正则
     public adminThread(String msg,String groupName, String groupId, String fromQQ, WebSocketClient cc) {
         this.msg = msg;
         this.cc = cc;

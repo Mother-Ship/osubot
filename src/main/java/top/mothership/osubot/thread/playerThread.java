@@ -272,12 +272,12 @@ public class playerThread extends Thread {
             delete(filename);
         }
 
-        if ("setid".equals(msg.substring(1, 6))) {
-
+        if (m.group(1).equals("setid")) {
+            //TODO 关联屙屎id和QQ
         }
 
         if ("r".equals(msg.substring(1, 2))) {
-
+                //TODO 最近一个成绩
         }
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
     }

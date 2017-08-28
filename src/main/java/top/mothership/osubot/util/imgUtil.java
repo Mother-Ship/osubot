@@ -42,7 +42,7 @@ public class imgUtil {
         pageUtil = new pageUtil();
         rb = ResourceBundle.getBundle("cabbage");
     }
-
+//TODO 重构imgUtil，所有静态资源只加载一次
     public void draw(Graphics2D g2, String color, String font, String size, String text, String x, String y) {
         //指定颜色
         g2.setPaint(Color.decode(rb.getString(color)));
