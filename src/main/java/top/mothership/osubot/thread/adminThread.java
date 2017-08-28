@@ -16,10 +16,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * Created by QHS on 2017/8/19.
@@ -37,27 +34,28 @@ public class adminThread extends Thread {
     private List<String> admin;
     private boolean group = false;
 
-    public adminThread(String msg, String groupId, String fromQQ, WebSocketClient cc) {
-        this.msg = msg;
-        this.groupId = groupId;
-        this.cc = cc;
-        this.fromQQ = fromQQ;
-        rb = ResourceBundle.getBundle("cabbage");
-        admin = Arrays.asList(rb.getString("admin").split(","));
-        group = true;
-    }
-
-    //重载构造方法，提供对私聊消息的处理
-    public adminThread(String msg, String fromQQ, WebSocketClient cc) {
+    public adminThread(String msg,String groupName, String groupId, String fromQQ, WebSocketClient cc) {
         this.msg = msg;
         this.cc = cc;
         this.fromQQ = fromQQ;
         rb = ResourceBundle.getBundle("cabbage");
         admin = Arrays.asList(rb.getString("admin").split(","));
+        //同一个构造器初始化两种消息
+        if(groupId!=null) {
+            this.groupId = groupId;
+            group = true;
+            logger.info("检测到来自群：" + groupName + "的【" + fromQQ + "】的提权操作群消息："
+                    + msg + ",已交给线程" + this.getName() + "处理");
+        }else {
+            logger.info("检测到来自【" + fromQQ + "】的提权操作消息："
+                    + msg + ",已交给线程" + this.getName() + "处理");
+        }
     }
 
 
-    public void sendMsg(String text) {
+
+
+    private void sendMsg(String text) {
         if (group) {
             String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + text + "\"}";
             cc.send(resp);
@@ -134,7 +132,11 @@ public class adminThread extends Thread {
                     if (dbUtil.getUserRole(user.getUser_id()).equals("notFound")) {
                         //如果userRole库中没有这个用户
                         dbUtil.addUserId(user.getUser_id());
-                        dbUtil.addUserInfo(user);
+                        Calendar c = Calendar.getInstance();
+                        if(c.get(Calendar.HOUR_OF_DAY)<4){
+                            c.add(Calendar.DAY_OF_MONTH,-1);
+                        }
+                        dbUtil.addUserInfo(user,new java.sql.Date(c.getTime().getTime()));
                         logger.info("将用户" + user.getUsername() + "添加到数据库。");
                         if (usernames.length == 1) {
                             logger.info("新增单个用户，绘制名片");

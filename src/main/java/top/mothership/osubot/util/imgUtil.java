@@ -7,10 +7,16 @@ import top.mothership.osubot.pojo.BP;
 import top.mothership.osubot.pojo.Map;
 import top.mothership.osubot.pojo.User;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
+import javax.imageio.stream.FileImageOutputStream;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
@@ -453,7 +459,12 @@ public class imgUtil {
         Graphics2D g2 = (Graphics2D) bpTop.getGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         draw(g2, "bpUnameColor", "bpUnameFont", "bpUnameSize", "Best Performance of " + user.getUsername(), "bpUnamex", "bpUnamey");
-        draw(g2, "bpQueryDateColor", "bpQueryDateFont", "bpQueryDateSize", new SimpleDateFormat("yy-MM-dd").format(Calendar.getInstance().getTime()), "bpQueryDatex", "bpQueryDatey");
+        Calendar c = Calendar.getInstance();
+        //日期补丁
+        if(c.get(Calendar.HOUR_OF_DAY)<4){
+            c.add(Calendar.DAY_OF_MONTH,-1);
+        }
+        draw(g2, "bpQueryDateColor", "bpQueryDateFont", "bpQueryDateSize", new SimpleDateFormat("yy-MM-dd").format(c.getTime()), "bpQueryDatex", "bpQueryDatey");
         g2.dispose();
         //将头部图片转换为数组
         int[] ImageArrayTop = new int[width * bpTopHeight];
@@ -638,23 +649,35 @@ public class imgUtil {
             logger.error(e.getMessage());
             return "error";
         }
+        logger.info("资源加载完成，开始绘制");
 
         //获取bp原分辨率，将宽拉到1366，然后算出高，减去768除以二然后上下各减掉这部分
+        int resizedWeight = 1366;
         int resizedHeight = (int) Math.ceil((float) bg.getHeight() / bg.getWidth() * 1366);
-        int diff = (int) Math.ceil((resizedHeight - 768) / 2);
+        int heightDiff = ((resizedHeight - 768) / 2);
+        int widthDiff = 0;
+        //如果算出重画之后的高<768(遇到金盏花这种特别宽的)
+        if(resizedHeight<768){
+            resizedWeight = (int) Math.ceil((float) bg.getWidth()/bg.getHeight()  * 768);
+            resizedHeight=768;
+            heightDiff =0;
+            widthDiff = ((resizedWeight - 1366) / 2);
+        }
+
 
         //把BG横向拉到1366;
-        BufferedImage resizedBGTmp = new BufferedImage(1366, resizedHeight, bg.getType());
+        //忘记在这里处理了
+        BufferedImage resizedBGTmp = new BufferedImage(resizedWeight, resizedHeight, bg.getType());
         Graphics2D g = (Graphics2D) resizedBGTmp.createGraphics();
-        g.drawImage(bg.getScaledInstance(1366, resizedHeight, Image.SCALE_SMOOTH), 0, 0, 1366, resizedHeight, null);
+        g.drawImage(bg.getScaledInstance(resizedWeight, resizedHeight, Image.SCALE_SMOOTH), 0, 0, resizedWeight, resizedHeight, null);
         g.dispose();
 
         //切割图片
         BufferedImage resizedBG = new BufferedImage(1366, 768, bg.getType());
-        for (int x = 0; x < 1365; x++) {
+        for (int x = 0; x < 1366; x++) {
             //这里之前用了原bg拉伸之前的分辨率，难怪报错
-            for (int y = 0; y < 767; y++) {
-                resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x, y + diff));
+            for (int y = 0; y < 768; y++) {
+                resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x+widthDiff, y + heightDiff));
             }
         }
         //刷新掉bg以及临时bg的缓冲，将其作废
@@ -880,9 +903,30 @@ public class imgUtil {
         g2.drawString("Beatmap by " + map.getCreator(), 7, 52);
         g2.drawString("Played by " + user.getUsername() + " on " + new SimpleDateFormat("yy/MM/dd HH:mm:ss").format(bp.getDate()) + ".", 7, 74);
         g2.dispose();
-        try {
-            ImageIO.write(resizedBG, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png"));
-            return bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png";
+
+
+//        BufferedImage result = new BufferedImage(1024, 600, resizedBG.getType());
+//        Graphics2D g3 = (Graphics2D) result.createGraphics();
+//        g3.drawImage(resizedBG.getScaledInstance(1024, 600, Image.SCALE_SMOOTH), 0, 0, 1024, 600, null);
+//        g3.dispose();
+
+        JPEGImageWriteParam jpegParams = new JPEGImageWriteParam(null);
+        jpegParams.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+        jpegParams.setCompressionQuality(0.9f);
+        try(FileImageOutputStream fios  = new FileImageOutputStream(
+                new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".jpg"));) {
+            final ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+            // specifies where the jpg image has to be written
+            writer.setOutput(fios);
+            // writes the file with given compression level
+            // from your JPEGImageWriteParam instance
+//            writer.write(null, new IIOImage(result, null, null), jpegParams);
+            writer.write(null, new IIOImage(resizedBG, null, null), jpegParams);
+            writer.dispose();
+            //改用stackoverflow看到的调整jpg画质的方法，得到了折中方案
+//            ImageIO.write(result, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png"));
+//            ImageIO.write(resizedBG, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png"));
+            return bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".jpg";
         } catch (IOException e) {
             logger.error("绘制图片成品失败");
             logger.error(e.getMessage());

@@ -25,6 +25,7 @@ public class apiUtil {
     private final String getUserURL = "https://osu.ppy.sh/api/get_user";
     private final String getBPURL = "https://osu.ppy.sh/api/get_user_best";
     private final String getMapURL = "https://osu.ppy.sh/api/get_beatmaps";
+    private final String getRecentURL = "https://osu.ppy.sh/api/get_user_recent";
     private Logger logger = LogManager.getLogger(this.getClass());
     private String key;
 
@@ -88,7 +89,7 @@ public class apiUtil {
         return new Gson().fromJson(output, User.class);
     }
 
-    //用来请求API获取今日BP的方法
+    //用来请求API获取BP的方法
     public List<BP> getAllBP(String username, int userId) {
         String URL;
         if(username!=null&&userId==0){
@@ -194,5 +195,60 @@ public class apiUtil {
         //组装返回字符串
         return map;
 
+    }
+    public BP getRecentScore(String username, int userId) {
+        String URL;
+        if(username!=null&&userId==0){
+            URL = getRecentURL + "?k=" + key + "&type=string&limit=1&u=" + username;
+        }else if(username==null&&userId!=0){
+            URL = getRecentURL + "?k=" + key + "&type=id&limit=1&u=" + userId;
+        }else{
+            logger.error("不可同时指定用户名和用户id。");
+            return null;
+        }
+        String output = null;
+        HttpURLConnection httpConnection = null;
+        List<BP> list = null;
+        int retry = 0;
+        while (retry < 5) {
+            try {
+                httpConnection =
+                        (HttpURLConnection) new URL(URL).openConnection();
+                //设置请求头
+                httpConnection.setRequestMethod("GET");
+                httpConnection.setRequestProperty("Accept", "application/json");
+                httpConnection.setConnectTimeout(2000);
+                httpConnection.setReadTimeout(2000);
+                if (httpConnection.getResponseCode() != 200) {
+                    logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
+                    retry++;
+                    continue;
+                }
+                //读取返回结果
+                BufferedReader responseBuffer =
+                        new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
+                //BP的返回结果有时候会有换行，必须手动拼接
+                output = responseBuffer.readLine();
+                //手动关闭流
+                httpConnection.disconnect();
+                responseBuffer.close();
+                logger.info("获得了" + username + "玩家最近成绩");
+
+                break;
+            } catch (IOException e) {
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
+                retry++;
+            }
+        }
+        if (retry == 5) {
+            logger.error("玩家" + username + "请求API获取最近游戏记录，失败五次");
+            return null;
+        }
+
+
+        //组装实体类
+        BP bp = new Gson().fromJson(output, BP.class);
+        //组装返回字符串
+        return bp;
     }
 }

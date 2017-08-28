@@ -35,6 +35,7 @@ public class pageUtil {
         BufferedImage img = null;
         while (retry < 5) {
             try {
+
                 httpConnection =
                         (HttpURLConnection) new URL(getBGURL + bid).openConnection();
                 httpConnection.setRequestMethod("GET");
@@ -68,8 +69,7 @@ public class pageUtil {
         return img;
 
     }
-    //1.1预计功能：获取reps watched，获取score rank,欢迎新人
-    //
+
     public int getRepWatched(int uid) {
         int retry = 0;
         Document doc = null;

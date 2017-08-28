@@ -18,6 +18,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Timer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Hello world!
@@ -26,6 +28,7 @@ public class App {
     public static WebSocketClient cc;
     public static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
+    private static String mainRegex = "[!！]([^ ]+) (.*+)";
 
     /*
     业务逻辑:监听群消息，当检测到!stat开头的消息时，分割出后面的用户名，开新线程请求屙屎的api
@@ -40,6 +43,7 @@ public class App {
 
     public static void main(String[] args) {
         logger.info("欢迎使用白菜1.0");
+        //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
             c.add(Calendar.DATE, 1);
@@ -71,63 +75,55 @@ public class App {
                         //新增一个入口，检测是否是管理员消息
                         // 原有逻辑：如果是群消息，对msg进行识别，如果感叹号开头就开启新线程传入。
                         // 现有逻辑：如果是群消息，识别是否是管理员专用的消息，如果是就交给adminThread，其他消息交给playerThread
-                        //如果这条消息是群消息的话
-                        if (json.get("act").getString().trim().equals("2")) {
+
+                        //群消息和私聊消息合并
+
+                        if (json.get("act").getString().trim().equals("2")||json.get("act").getString().trim().equals("21")) {
                             String msg = json.get("msg").getString();
                             //对msg进行反转义
                             msg = msg.replaceAll("&#91;", "[");
                             msg = msg.replaceAll("&#93;", "]");
 
                             //对msg进行识别
-                            if (msg.startsWith("!") || msg.startsWith("！")) {
-                                //如果消息由半角/全角感叹号开头，才获取群名/群号并且进行处理
-                                String groupId = json.get("fromGroup").getString();
-                                String groupName = json.get("fromGroupName").getString();
-                                //如果是需要提权的操作
-                                if ("sudo".equals(msg.substring(1, 5))) {
-                                    String fromQQ = json.get("fromQQ").getString();
-                                    adminThread at = new adminThread(msg, groupId, fromQQ, cc);
-                                    logger.info("检测到来自【" + groupName + "】的提权操作群消息："
-                                            + msg + ",已交给线程" + at.getName() + "处理");
+                            if (msg.matches(mainRegex)) {
+                                Matcher m= Pattern.compile(mainRegex).matcher(msg);
+                                m.find();
+                                //如果消息匹配正则表达式
+                                String groupId=null;
+                                String groupName=null;
+                                String fromQQ=null;
+                                if(json.get("fromGroup")!=null) {
+                                    groupId = json.get("fromGroup").getString();
+                                    groupName = json.get("fromGroupName").getString();
+                                    fromQQ = json.get("fromQQ").getString();
+                                }else{
+                                    fromQQ = json.get("fromQQ").getString();
+                                }
+
+                                if (m.group(1).equals("sudo")) {
+                                    adminThread at = new adminThread(msg,groupName,groupId, fromQQ, cc);
                                     at.start();
                                 } else {
                                     //开启新线程，将msg传入
-                                    playerThread pt = new playerThread(msg, groupId, cc);
-                                    logger.info("检测到来自【" + groupName + "】的群消息："
-                                            + msg + ",已交给线程" + pt.getName() + "处理");
-
+                                    playerThread pt = new playerThread(msg,groupName,groupId, fromQQ, cc);
                                     pt.start();
                                 }
+
                             }else{
                                 //如果不是感叹号开头的消息，进入禁言识别
                                 //TODO 禁言识别
 
-                                // 当一定时间/一定条数内 同样消息出现五条之后，开始缓冲消息，
+                                // 当同样消息出现五条之后，开始缓冲消息，
                                 //到100条谁说了第六条就谁复读，判定到复读之后判定是否群管，如果是群管复读艾特群主，如果是群主。。什么也不做（x
                             }
 
 
                         }
 
-                        if (json.get("act").getString().trim().equals("21")) {
-                            //处理私聊消息
-                            String msg = json.get("msg").getString();
-                            //对msg进行识别
-                            if (msg.startsWith("!") || msg.startsWith("！")) {
-                                //如果消息由半角/全角感叹号开头，获取消息发送者并且进行处理
-                                String fromQQ = json.get("fromQQ").getString();
-                                //如果是需要提权的操作
-                                if ("sudo".equals(msg.substring(1, 5))) {
-                                    adminThread at = new adminThread(msg, fromQQ, cc);
-                                    logger.info("检测到来自【" + fromQQ + "】的提权操作私聊消息："
-                                            + msg + ",已交给线程" + at.toString() + "处理");
-                                    at.start();
-                                }
-                            }
-                        }
+
+
                         if (json.get("act").getString().trim().equals("103")) {
                             //群成员增加……
-
                             //对msg进行识别
                             String beingOperateQQ = json.get("beingOperateQQ").getString();
                             String groupId = json.get("fromGroup").getString();

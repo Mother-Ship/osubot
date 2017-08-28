@@ -7,6 +7,7 @@ import top.mothership.osubot.pojo.User;
 import top.mothership.osubot.util.*;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.TimerTask;
 
@@ -41,8 +42,8 @@ public class entryJob extends TimerTask {
                     e.printStackTrace();
                 }
             }
-
-            dbUtil.addUserInfo(user);
+            //将日期改为一天前写入
+            dbUtil.addUserInfo(user,new java.sql.Date(new Date().getTime()-1000*3600*24));
             logger.info("将" + user.getUsername() + "的数据录入成功");
             try {
                 //停止500ms，避免触发API频繁操作

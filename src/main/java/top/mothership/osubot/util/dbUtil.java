@@ -127,9 +127,9 @@ public class dbUtil {
 
 
     //根据osuAPI拿到完整user之后，写入userinfo
-    public int addUserInfo(User user) {
+    public int addUserInfo(User user,Date date) {
         //id用null,日期改为前一天
-        String sql = "INSERT INTO `userinfo` VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?, date_sub(curdate(),interval 1 day))";
+        String sql = "INSERT INTO `userinfo` VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         try (Connection c = getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -149,6 +149,7 @@ public class dbUtil {
             ps.setInt(12, user.getCount_rank_ss());
             ps.setInt(13, user.getCount_rank_s());
             ps.setInt(14, user.getCount_rank_a());
+            ps.setDate(14, date);
             return ps.executeUpdate();
         } catch (SQLException e) {
             logger.error("写入用户信息出错");
@@ -211,8 +212,11 @@ public class dbUtil {
                 带day = 0:进入本方法，不读数据库，不进行对比
                 day>1，例如day=2，21号进入本方法，查的是19号结束时候的成绩
                 */
-
+        //打了日期补丁
         Calendar cl = Calendar.getInstance();
+        if(cl.get(Calendar.HOUR_OF_DAY)<4){
+            cl.add(Calendar.DAY_OF_MONTH,-1);
+        }
         cl.add(Calendar.DATE, -day);
         //去tmdUTC
         User user = new User();

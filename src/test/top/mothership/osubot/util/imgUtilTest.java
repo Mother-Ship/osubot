@@ -14,19 +14,32 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by QHS on 2017/8/24.
  */
 public class imgUtilTest extends TestCase {
+    private static String mainRegex = "[!！]([^ ]+) (.*+)";
+    private static String mainRegexWithNum = "[!！]([^ ]+) ([^#]+) #([0-9]+)";
     public void testDrawOneBP() throws Exception {
-        imgUtil imgUtil = new imgUtil();
+        String txt="!stat Mother Ship #2";
 
-        BP bp = new BP();
-        bp.setBeatmap_id(53554);
-        bp.setRank("XH");
-        bp.setPerfect(1);
+        Matcher m= Pattern.compile(mainRegexWithNum).matcher(txt);
+        m.find();
+
+            String c1=m.group(1);
+            String word1=m.group(2);
+            String ws1=m.group(3);
+//            String var1=m.group(4);
+//            String ws2=m.group(5);
+//            String c2=m.group(6);
+//            String int1=m.group(7);
+//            System.out.print("("+c1+")"+"("+word1+")"+"("+ws1+")"+"("+var1+")"+"("+ws2+")"+"("+c2+")"+"("+int1+")"+"\n");
+            System.out.print(m.matches());
+
 
     }
-
 }
+
