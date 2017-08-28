@@ -24,7 +24,7 @@ public class dbUtil {
         rb = ResourceBundle.getBundle("cabbage");
     }
 
-    public Connection getConnection() throws SQLException {
+    private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(rb.getString("jdbcURL"), rb.getString("jdbcUser"),
                 rb.getString("jdbcPwd"));
     }
@@ -47,6 +47,38 @@ public class dbUtil {
             return "error";
         }
     }
+    public int getId(String fromQQ) {
+        String querySql = "SELECT `user_id` FROM `userrole` WHERE `QQ` = ?";
+        try (Connection c = getConnection();
+             PreparedStatement queryPs = c.prepareStatement(querySql)) {
+            queryPs.setString(1, fromQQ);
+            ResultSet rs = queryPs.executeQuery();
+            if(rs.next()) {
+                return rs.getInt("user_id");
+            }else{
+                return 0;
+            }
+        } catch (SQLException e) {
+            logger.error("获取userRole表中QQ出错");
+            logger.debug(e.getMessage());
+            return 0;
+        }
+    }
+
+    public int setId(String fromQQ,int userId) {
+        String querySql = "UPDATE `userrole` SET `QQ` = ? WHERE `user_id` = ?";
+        try (Connection c = getConnection();
+             PreparedStatement ps = c.prepareStatement(querySql)) {
+            ps.setString(1, fromQQ);
+            ps.setInt(2, userId);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("修改userRole表中QQ出错");
+            logger.debug(e.getMessage());
+            return 0;
+        }
+    }
+
 
     //为!褪裙功能使用
     public List<Integer> listUserInfoByRole(String role) {
@@ -149,7 +181,7 @@ public class dbUtil {
             ps.setInt(12, user.getCount_rank_ss());
             ps.setInt(13, user.getCount_rank_s());
             ps.setInt(14, user.getCount_rank_a());
-            ps.setDate(14, date);
+            ps.setDate(15, date);
             return ps.executeUpdate();
         } catch (SQLException e) {
             logger.error("写入用户信息出错");

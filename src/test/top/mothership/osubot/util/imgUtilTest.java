@@ -24,14 +24,14 @@ public class imgUtilTest extends TestCase {
     private static String mainRegex = "[!！]([^ ]+) (.*+)";
     private static String mainRegexWithNum = "[!！]([^ ]+) ([^#]+) #([0-9]+)";
     public void testDrawOneBP() throws Exception {
-        String txt="!stat Mother Ship #2";
+        String txt="!statme #2";
 
-        Matcher m= Pattern.compile(mainRegexWithNum).matcher(txt);
+        Matcher m= Pattern.compile(mainRegex).matcher(txt);
         m.find();
 
             String c1=m.group(1);
             String word1=m.group(2);
-            String ws1=m.group(3);
+//            String ws1=m.group(3);
 //            String var1=m.group(4);
 //            String ws2=m.group(5);
 //            String c2=m.group(6);

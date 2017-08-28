@@ -28,7 +28,7 @@ public class App {
     public static WebSocketClient cc;
     public static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
-    private static String mainRegex = "[!！]([^ ]+) (.*+)";
+    private static String mainRegex = "[!！]([^ ]+)(.*+)";
 
     /*
     业务逻辑:监听群消息，当检测到!stat开头的消息时，分割出后面的用户名，开新线程请求屙屎的api

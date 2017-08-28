@@ -13,12 +13,16 @@ import top.mothership.osubot.util.imgUtil;
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.sql.Date;
 
 public class playerThread extends Thread {
+    private static String mainRegex = "[!！]([^ ]+)(.*+)";
+    private static String mainRegexWithNum = "[!！]([^ ]+)([^#]+) #(\\d+)";
     private String msg;
     private String groupId;
     private String fromQQ;
@@ -30,26 +34,24 @@ public class playerThread extends Thread {
     private apiUtil apiUtil = new apiUtil();
     private dbUtil dbUtil = new dbUtil();
     private ResourceBundle rb;
-    private static String mainRegex = "[!！]([^ ]+) (.*+)";
-    private static String mainRegexWithNum = "[!！]([^ ]+) ([^#]+) #(\\d+)";
     private Matcher m;
     private boolean group = false;
 
-    public playerThread(String msg,String groupName, String groupId, String fromQQ, WebSocketClient cc) {
+    public playerThread(String msg, String groupName, String groupId, String fromQQ, WebSocketClient cc) {
         this.msg = msg;
         this.fromQQ = fromQQ;
         this.cc = cc;
         rb = ResourceBundle.getBundle("cabbage");
-        if(groupId!=null) {
+        if (groupId != null) {
             this.groupId = groupId;
             group = true;
             logger.info("检测到来自群：" + groupName + "的【" + fromQQ + "】的操作群消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
-        }else {
+        } else {
             logger.info("检测到来自【" + fromQQ + "】的操作消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
         }
-        m= Pattern.compile(mainRegex).matcher(msg);
+        m = Pattern.compile(mainRegex).matcher(msg);
         m.find();
     }
 
@@ -70,37 +72,13 @@ public class playerThread extends Thread {
             int day = 1;
             String username;
             if (msg.matches(mainRegexWithNum)) {
-                m= Pattern.compile(mainRegexWithNum).matcher(msg);
+                m = Pattern.compile(mainRegexWithNum).matcher(msg);
                 m.find();
-                try {
-                    //取正则第三个参数为3
-                    day = Integer.valueOf(m.group(3));
-                    if (day > (int) ((new java.util.Date().getTime() - new SimpleDateFormat("yyyy-MM-dd").parse("2007-09-16").getTime()) / 1000 / 60 / 60 / 24)) {
-                        sendMsg("你要找史前时代的数据吗。");
-                        logger.info("指定的日期早于osu!首次发布日期");
-                        logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                        return;
-                    }
-                    if (day < 0) {
-                        sendMsg("白菜不会预知未来。");
-                        logger.info("天数不能为负值");
-                        logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                        return;
-                    }
-                } catch (java.lang.NumberFormatException e) {
-                    sendMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
-                    logger.info("给的天数不是int值");
-                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                    return;
-                } catch (ParseException e) {
-                    //由于解析的是固定字符串，不会出异常，无视
-                }
-                //因为本来id末空格也不影响
-                //多读一位可以支持id接#不加空格
-
-                username = m.group(2);
+                day = Integer.valueOf(m.group(3));
+                checkDay(day);
+                username = m.group(2).substring(1);
             } else {
-                username = m.group(2);
+                username = m.group(2).substring(1);
             }
             if ("白菜".equals(username)) {
                 sendMsg("唉，没人疼没人爱，我是地里一颗小白菜。");
@@ -116,32 +94,7 @@ public class playerThread extends Thread {
                 sendMsg("你们总是想查BanchoBot。\\n可是BanchoBot已经很累了，她不想被查。\\n她想念自己的小ppy，而不是被逼着查PP。\\n你有考虑过这些吗？没有！你只考虑过你自己。");
                 return;
             }
-            //进行检验，是否初次使用
-            checkFirst(userFromAPI);
-
-            boolean near = false;
-            User userInDB = dbUtil.getUserInfo(userFromAPI.getUser_id(), day);
-            if (userInDB == null) {
-                //如果第一次没取到
-                userInDB = dbUtil.getNearestUserInfo(userFromAPI.getUser_id(), day);
-                near = true;
-            }
-
-            String role = dbUtil.getUserRole(userFromAPI.getUser_id());
-
-            String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
-            if (filename.equals("error")) {
-                sendMsg("绘图过程中发生致命错误。");
-            }
-            //由于带[]的玩家，生成的文件名会导致返回出错，直接在imgUtil改为用数字id生成文件
-            sendMsg("[CQ:image,file=" + filename + "]");
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            //删掉生成的文件
-            delete(filename);
+            statUser(userFromAPI, day);
 
         }
 
@@ -151,7 +104,7 @@ public class playerThread extends Thread {
             String username = null;
             String filename = null;
             if (msg.matches(mainRegexWithNum)) {
-                m= Pattern.compile(mainRegexWithNum).matcher(msg);
+                m = Pattern.compile(mainRegexWithNum).matcher(msg);
                 m.find();
                 try {
                     num = Integer.valueOf(m.group(3));
@@ -167,9 +120,9 @@ public class playerThread extends Thread {
                     logger.info("线程" + this.getName() + "处理完毕，已经退出");
                     return;
                 }
-                username = m.group(2);
+                username = m.group(2).substring(1);
             } else {
-                username = m.group(2);
+                username = m.group(2).substring(1);
             }
 
 
@@ -224,7 +177,7 @@ public class playerThread extends Thread {
                 logger.info("正在绘制今日BP");
                 filename = imgUtil.drawUserBP(user, result);
                 if (filename.equals("error")) {
-                    sendMsg("绘图过程中发生致命错误：本地资源读取失败。");
+                    sendMsg("绘图过程中发生致命错误。");
                     return;
                 }
                 sendMsg("[CQ:image,file=" + filename + "]");
@@ -250,8 +203,8 @@ public class playerThread extends Thread {
                     return;
                 } else {
                     //list基于0，得-1
-                    BP bp = list.get(num-1);
-                    logger.info("获得了玩家" + user.getUsername() + "的第"+num+"个BP：" + bp.getBeatmap_id() + "，正在获取歌曲名称");
+                    BP bp = list.get(num - 1);
+                    logger.info("获得了玩家" + user.getUsername() + "的第" + num + "个BP：" + bp.getBeatmap_id() + "，正在获取歌曲名称");
                     Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
 
                     filename = imgUtil.drawOneBP(user, bp, map);
@@ -273,17 +226,111 @@ public class playerThread extends Thread {
         }
 
         if (m.group(1).equals("setid")) {
-            //TODO 关联屙屎id和QQ
+            String username = m.group(2).substring(1);
+            logger.info("尝试将" + username + "绑定到" + fromQQ + "上");
+            int userId = apiUtil.getUser(username, 0).getUser_id();
+            int userIdFromDB = dbUtil.getId(fromQQ);
+            //只有这个玩家没绑定QQ才能执行绑定
+            if (userIdFromDB==0) {
+                dbUtil.setId(String.valueOf(fromQQ), userId);
+                sendMsg("将" + username + "绑定到" + fromQQ + "成功");
+            } else {
+                username = apiUtil.getUser(null,userIdFromDB).getUsername();
+                sendMsg("你的QQ已经绑定了"+username+"，如果发生错误请联系妈妈船。");
+            }
         }
 
-        if ("r".equals(msg.substring(1, 2))) {
-                //TODO 最近一个成绩
+        if (m.group(1).equals("statme")) {
+            int userId = dbUtil.getId(fromQQ);
+            logger.info("检测到对" + userId + "的查询");
+            int day = 1;
+            if (msg.matches(mainRegexWithNum)) {
+                day = Integer.valueOf(m.group(2).substring(1));
+                checkDay(day);
+            }
+            User user = apiUtil.getUser(null, userId);
+            statUser(user, day);
+        }
+        if (m.group(1).equals("bpme")) {
+            int userId = dbUtil.getId(fromQQ);
+            logger.info("检测到对" + userId + "的BP查询");
+            if (msg.matches(mainRegexWithNum)) {
+
+            }
+            User user = apiUtil.getUser(null, userId);
+            statUser(user, day);
+        }
+        if (m.group(1).equals("recent")) {
+            //TODO 最近一个成绩
+
+
         }
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
     }
 
+
+
+    private void checknum(){
+        //TODO 拆开BP的if块进行重构，将这两个方法返回值改为boolean
+    }
+
+    private void checkDay(int day) {
+        try {
+            //取正则第三个参数为3
+            if (day > (int) ((new java.util.Date().getTime() - new SimpleDateFormat("yyyy-MM-dd").parse("2007-09-16").getTime()) / 1000 / 60 / 60 / 24)) {
+                sendMsg("你要找史前时代的数据吗。");
+                logger.info("指定的日期早于osu!首次发布日期");
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                return;
+            }
+            if (day < 0) {
+                sendMsg("白菜不会预知未来。");
+                logger.info("天数不能为负值");
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                return;
+            }
+        } catch (java.lang.NumberFormatException e) {
+            sendMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
+            logger.info("给的天数不是int值");
+            logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            return;
+        } catch (ParseException e) {
+            //由于解析的是固定字符串，不会出异常，无视
+        }
+    }
+
+    private void statUser(User userFromAPI, int day) {
+
+        //进行检验，是否初次使用
+        checkFirst(userFromAPI);
+
+        boolean near = false;
+        User userInDB = dbUtil.getUserInfo(userFromAPI.getUser_id(), day);
+        if (userInDB == null) {
+            //如果第一次没取到
+            userInDB = dbUtil.getNearestUserInfo(userFromAPI.getUser_id(), day);
+            near = true;
+        }
+
+        String role = dbUtil.getUserRole(userFromAPI.getUser_id());
+
+        String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
+        if (filename.equals("error")) {
+            sendMsg("绘图过程中发生致命错误。");
+        }
+        //由于带[]的玩家，生成的文件名会导致返回出错，直接在imgUtil改为用数字id生成文件
+        sendMsg("[CQ:image,file=" + filename + "]");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        //删掉生成的文件
+        delete(filename);
+    }
+
     //减少代码重复量，这个user必须包含用户名
-    private void checkFirst(User user){
+    private void checkFirst(User user) {
         if (dbUtil.getUserRole(user.getUser_id()).equals("notFound")) {
             //是个没用过白菜的人呢
             //玩家初次使用本机器人，直接在数据库登记当天数据
@@ -291,14 +338,14 @@ public class playerThread extends Thread {
             dbUtil.addUserId(user.getUser_id());
             //需求是把12点之后4点之前的减一天
             Calendar c = Calendar.getInstance();
-            if(c.get(Calendar.HOUR_OF_DAY)<4){
-                c.add(Calendar.DAY_OF_MONTH,-1);
+            if (c.get(Calendar.HOUR_OF_DAY) < 4) {
+                c.add(Calendar.DAY_OF_MONTH, -1);
             }
-            dbUtil.addUserInfo(user,new java.sql.Date(c.getTime().getTime()));
+            dbUtil.addUserInfo(user, new java.sql.Date(c.getTime().getTime()));
         }
     }
 
-    private void delete(String filename){
+    private void delete(String filename) {
         File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
         f.delete();
     }

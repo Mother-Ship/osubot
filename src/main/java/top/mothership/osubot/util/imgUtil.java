@@ -1,6 +1,5 @@
 package top.mothership.osubot.util;
 
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import top.mothership.osubot.pojo.BP;
@@ -14,9 +13,8 @@ import javax.imageio.ImageWriter;
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
 import javax.imageio.stream.FileImageOutputStream;
 import java.awt.*;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
@@ -29,20 +27,89 @@ import java.util.*;
 import java.util.List;
 
 public class imgUtil {
-    private Logger logger = LogManager.getLogger(this.getClass());
+    //不用this，直接指明类就可以了
+    private static Logger logger = LogManager.getLogger("imgUtil.class");
 
     /*设计这个方法
     它应该输入username，应该输出一张完整的stat图的路径
     */
-    private ResourceBundle rb;
-    private pageUtil pageUtil;
+    private pageUtil pageUtil = new pageUtil();
+    private static ResourceBundle rb = ResourceBundle.getBundle("cabbage");
+    private static List<BufferedImage> Images;
+    private static List<BufferedImage> Nums;
+    private static List<BufferedImage> Mods;
+    private static BufferedImage defaultBG = null;
+    private static BufferedImage layout = null;
+    private static BufferedImage A;
+    private static BufferedImage B;
+    private static BufferedImage C;
+    private static BufferedImage D;
+    private static BufferedImage X;
+    private static BufferedImage XH;
+    private static BufferedImage S;
+    private static BufferedImage SH;
+    static {
+        final Path resultPath = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
+        //使用NIO扫描文件夹
+        final List<File> resultFiles = new ArrayList<File>();
+        Images = new ArrayList<>();
+        Nums = new ArrayList<>();
+        Mods = new ArrayList<>();
+        SimpleFileVisitor<Path> resultFinder = new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                resultFiles.add(file.toFile());
+                return super.visitFile(file, attrs);
+            }
+        };
 
-    public imgUtil() {
-        //构造器内初始化配置文件以及工具类
-        pageUtil = new pageUtil();
-        rb = ResourceBundle.getBundle("cabbage");
+        try {
+            //将所有文件分为三个List
+            java.nio.file.Files.walkFileTree(resultPath,  resultFinder);
+            for (int i = 0; i < 22; i++) {
+                Images.add(ImageIO.read(resultFiles.get(i)));
+            }
+            for (int i = 22; i < 36; i++) {
+                Nums.add(ImageIO.read(resultFiles.get(i)));
+            }
+            for (int i = 36; i < 47; i++) {
+                Mods.add(ImageIO.read(resultFiles.get(i)));
+            }
+
+        } catch (IOException e) {
+            logger.error("读取result相关资源失败");
+            logger.error(e.getMessage());
+        }
+
+        try {
+
+            A = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("A")));
+            B = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("B")));
+            C = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("C")));
+            D = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("D")));
+            X = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("X")));
+            XH = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("XH")));
+            S = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("S")));
+            SH = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("SH")));
+
+        } catch (IOException e) {
+            logger.error("读取bp相关资源失败");
+            logger.error(e.getMessage());
+        }
+        try {
+            layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("userlayout")));
+            defaultBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("defaultbg")));
+        } catch (IOException e) {
+            logger.error("读取stat相关资源失败");
+            logger.error(e.getMessage());
+        }
+
+
+
+
     }
-//TODO 重构imgUtil，所有静态资源只加载一次
+
+
     public void draw(Graphics2D g2, String color, String font, String size, String text, String x, String y) {
         //指定颜色
         g2.setPaint(Color.decode(rb.getString(color)));
@@ -52,8 +119,19 @@ public class imgUtil {
         g2.drawString(text, Integer.decode(rb.getString(x)), Integer.decode(rb.getString(y)));
 
     }
+    private String drawImage(BufferedImage bg,User userFromAPI){
+        try {
+            ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\" + userFromAPI.getUser_id() + ".png"));
+            bg.flush();
+            return userFromAPI.getUser_id() + ".png";
+        } catch (IOException e) {
+            logger.error("绘制图片成品失败");
+            logger.error(e.getMessage());
+            return "error";
+        }
+    }
 
-    public List<String> convertMOD(Integer bp) {
+    private List<String> convertMOD(Integer bp) {
         String modBin = Integer.toBinaryString(bp);
         //反转mod
         modBin = new StringBuffer(modBin).reverse().toString();
@@ -114,31 +192,16 @@ public class imgUtil {
 //        logger.info("尝试使用二分法获取"+userFromAPI.getUsername()+"的scoreRank");
 //        int scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(),1,2000);
         //准备资源：背景图和用户头像，以及重画之后的用户头像
-        BufferedImage bg = null;
-        BufferedImage layout = null;
         BufferedImage ava = null;
+        BufferedImage bg = null;
         BufferedImage resizedAva = null;
         try {
-            layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("userlayout")));
-        } catch (IOException e) {
-            logger.error("读取布局图片失败");
-            logger.error(e.getMessage());
-            return "error";
-        }
-
-        try {
-            bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\bg\\" + role + ".png"));
+            bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\bg\\stat" + role + ".png"));
         } catch (IOException e) {
             //所有没有独立bg的都采用默认bg
-            try {
-                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("defaultbg")));
-            } catch (IOException e1) {
-                logger.error("读取背景图片失败");
-                logger.error(e1.getMessage());
-                return "error";
-            }
+            //为了防止错乱，尝试使用获取子图片的方法
+            bg=defaultBG.getSubimage(0,0,defaultBG.getWidth(),defaultBG.getHeight());
         }
-
 
         //将布局图片初始化
         Graphics2D g2 = (Graphics2D) bg.getGraphics();
@@ -170,7 +233,7 @@ public class imgUtil {
                 resizedAva = new BufferedImage(resizedWidth, resizedHeight, ava.getType());
                 Graphics2D g = (Graphics2D) resizedAva.getGraphics();
                 //这么重画有点锯齿严重，试试其他办法
-//          g.drawImage(ava, 0, 0, resizedWidth, resizedHeight, null);
+//              g.drawImage(ava, 0, 0, resizedWidth, resizedHeight, null);
                 g.drawImage(ava.getScaledInstance(resizedWidth, resizedHeight, Image.SCALE_SMOOTH), 0, 0, resizedWidth, resizedHeight, null);
                 g.dispose();
                 ava.flush();
@@ -386,28 +449,14 @@ public class imgUtil {
             }
         }
         g2.dispose();
-        try {
-            ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\" + userFromAPI.getUser_id() + ".png"));
-            return userFromAPI.getUser_id() + ".png";
-        } catch (IOException e) {
-            logger.error("绘制图片成品失败");
-            logger.error(e.getMessage());
-            return "error";
-        }
+
+        return drawImage(bg,userFromAPI);
     }
 
     public String drawUserBP(User user, List<BP> list) {
         //思路：获取list的大小，把每个list成员的.getbeatmapName信息绘制到图片上
         logger.info("开始绘制" + user.getUsername() + "的今日BP信息");
         BufferedImage bpTop;
-        BufferedImage A;
-        BufferedImage B;
-        BufferedImage C;
-        BufferedImage D;
-        BufferedImage X;
-        BufferedImage XH;
-        BufferedImage S;
-        BufferedImage SH;
         //根据谱面名称+难度的长度，将所有BP分为两个List
         List<BP> bp2 = new ArrayList<>();
         List<BP> bp3 = new ArrayList<>();
@@ -418,28 +467,19 @@ public class imgUtil {
         int bpMid2Height = 0;
         int bpMid3Height = 0;
         try {
-            //使用guava的类读取路径
-            bpTop = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("bptop")));
-            A = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("A")));
-            B = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("B")));
-            C = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("C")));
-            D = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("D")));
-            X = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("X")));
-            XH = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("XH")));
-            S = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("S")));
-            SH = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("SH")));
-            for (int i = 0; i < list.size(); i++) {
+            bpTop = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("bptop")));
+            for (BP aList : list) {
                 //准备好和BP数量相同的List
-                if (list.get(i).getBeatmap_name().length() < Integer.valueOf(rb.getString("bplimit"))) {
+                if (aList.getBeatmap_name().length() < Integer.valueOf(rb.getString("bplimit"))) {
                     //根据谱面名称+难度的长度读取BG
-                    BufferedImage bpmidTmp = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("bpmid2")));
+                    BufferedImage bpmidTmp = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("bpmid2")));
                     bpmids2.add(bpmidTmp);
-                    bp2.add(list.get(i));
+                    bp2.add(aList);
                     bpMid2Height = bpmidTmp.getHeight();
                 } else {
-                    BufferedImage bpmidTmp = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\" + rb.getString("bpmid3")));
+                    BufferedImage bpmidTmp = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("bpmid3")));
                     bpmids3.add(bpmidTmp);
-                    bp3.add(list.get(i));
+                    bp3.add(aList);
                     bpMid3Height = bpmidTmp.getHeight();
                 }
                 width = bpTop.getWidth();
@@ -450,7 +490,7 @@ public class imgUtil {
             logger.error(e.getMessage());
             return "error";
         }
-        logger.info("载入背景、rank小图标完成");
+
         //规划出结果图的尺寸(2行BP数量*2行BP图高度+3行BP数量*3行BP高度)
         BufferedImage result = new BufferedImage(width, bpMid2Height * (1 + bp2.size()) + bpMid3Height * +bp3.size(), BufferedImage.TYPE_INT_RGB);
 
@@ -461,8 +501,8 @@ public class imgUtil {
         draw(g2, "bpUnameColor", "bpUnameFont", "bpUnameSize", "Best Performance of " + user.getUsername(), "bpUnamex", "bpUnamey");
         Calendar c = Calendar.getInstance();
         //日期补丁
-        if(c.get(Calendar.HOUR_OF_DAY)<4){
-            c.add(Calendar.DAY_OF_MONTH,-1);
+        if (c.get(Calendar.HOUR_OF_DAY) < 4) {
+            c.add(Calendar.DAY_OF_MONTH, -1);
         }
         draw(g2, "bpQueryDateColor", "bpQueryDateFont", "bpQueryDateSize", new SimpleDateFormat("yy-MM-dd").format(c.getTime()), "bpQueryDatex", "bpQueryDatey");
         g2.dispose();
@@ -594,23 +634,14 @@ public class imgUtil {
             logger.info("绘制" + bp3.get(i).getBeatmap_name() + "完成");
         }
         //生成新图片
-        try {
-            ImageIO.write(result, "png", new File(rb.getString("path") + "\\data\\image\\" + user.getUser_id() + ".png"));
-            return user.getUser_id() + ".png";
-        } catch (IOException e) {
-            logger.error("绘制图片成品失败");
-            logger.error(e.getMessage());
-            return "error";
-        }
-
-
+        return drawImage(result,user);
     }
 
 
     public String drawOneBP(User user, BP bp, Map map) {
-        logger.info("开始绘制"+map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]的结算界面");
+        logger.info("开始绘制" + map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]的结算界面");
         BufferedImage bg;
-        final Path path = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
+
         try {
             //此处传入的应该是用户的数字id
             bg = pageUtil.getBG(bp.getBeatmap_id());
@@ -619,37 +650,8 @@ public class imgUtil {
             logger.error(e.getMessage());
             return "error";
         }
-        //使用NIO扫描文件夹
-        final List<File> files = new ArrayList<File>();
-        List<BufferedImage> Images = new ArrayList<>();
-        List<BufferedImage> Nums = new ArrayList<>();
-        List<BufferedImage> Mods = new ArrayList<>();
-        SimpleFileVisitor<Path> finder = new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                files.add(file.toFile());
-                return super.visitFile(file, attrs);
-            }
-        };
-        try {
-            //将所有文件分为三个List
-            java.nio.file.Files.walkFileTree(path, finder);
-            for (int i = 0; i < 22; i++) {
-                Images.add(ImageIO.read(files.get(i)));
-            }
-            for (int i = 22; i < 36; i++) {
-                Nums.add(ImageIO.read(files.get(i)));
-            }
-            for (int i = 36; i < 47; i++) {
-                Mods.add(ImageIO.read(files.get(i)));
-            }
 
-        } catch (IOException e) {
-            logger.error("读取BP布局图片失败");
-            logger.error(e.getMessage());
-            return "error";
-        }
-        logger.info("资源加载完成，开始绘制");
+        logger.info("歌曲BG加载完成，开始绘制");
 
         //获取bp原分辨率，将宽拉到1366，然后算出高，减去768除以二然后上下各减掉这部分
         int resizedWeight = 1366;
@@ -657,10 +659,10 @@ public class imgUtil {
         int heightDiff = ((resizedHeight - 768) / 2);
         int widthDiff = 0;
         //如果算出重画之后的高<768(遇到金盏花这种特别宽的)
-        if(resizedHeight<768){
-            resizedWeight = (int) Math.ceil((float) bg.getWidth()/bg.getHeight()  * 768);
-            resizedHeight=768;
-            heightDiff =0;
+        if (resizedHeight < 768) {
+            resizedWeight = (int) Math.ceil((float) bg.getWidth() / bg.getHeight() * 768);
+            resizedHeight = 768;
+            heightDiff = 0;
             widthDiff = ((resizedWeight - 1366) / 2);
         }
 
@@ -677,16 +679,13 @@ public class imgUtil {
         for (int x = 0; x < 1366; x++) {
             //这里之前用了原bg拉伸之前的分辨率，难怪报错
             for (int y = 0; y < 768; y++) {
-                resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x+widthDiff, y + heightDiff));
+                resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x + widthDiff, y + heightDiff));
             }
         }
         //刷新掉bg以及临时bg的缓冲，将其作废
         resizedBGTmp.flush();
 
         bg.flush();
-
-
-
 
 
         Graphics2D g2 = (Graphics2D) resizedBG.getGraphics();
@@ -775,10 +774,10 @@ public class imgUtil {
         char[] Combo = String.valueOf(bp.getMaxcombo()).toCharArray();
         for (int i = 0; i < Combo.length; i++) {
             //第二个参数是数字之间的距离+第一个数字离最左边的距离
-            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Combo[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 30 - 7, 576 - 55+10, null);
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(Combo[i]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * i + 30 - 7, 576 - 55 + 10, null);
         }
         //画上结尾的x
-        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Combo.length + 30 - 7, 576 - 55+10, null);
+        g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Combo.length + 30 - 7, 576 - 55 + 10, null);
 
         //300 这些图片应该缩小到一半大小
         g2.drawImage(Images.get(5), 40 - 4, 263 - 27, null);
@@ -846,48 +845,48 @@ public class imgUtil {
 
         if (acc == 100) {
             //从最左边的数字开始，先画出100
-            g2.drawImage(Nums.get(1).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 0 + 317 - 8, 576 - 55+10, null);
-            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 1 + 317 - 8, 576 - 55+10, null);
-            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 2 + 317 - 8, 576 - 55+10, null);
+            g2.drawImage(Nums.get(1).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 0 + 317 - 8, 576 - 55 + 10, null);
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 1 + 317 - 8, 576 - 55 + 10, null);
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 2 + 317 - 8, 576 - 55 + 10, null);
             //打点
-            g2.drawImage(Nums.get(11).getScaledInstance(20, 45, Image.SCALE_SMOOTH), 37 * 1 + 407 - 8, 576 - 55+10, null);
+            g2.drawImage(Nums.get(11).getScaledInstance(20, 45, Image.SCALE_SMOOTH), 37 * 1 + 407 - 8, 576 - 55 + 10, null);
             //从点的右边（+27像素）开始画两个0
-            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 37 * 1 + 407 - 8, 576 - 55+10, null);
-            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 37 * 2 + 407 - 8, 576 - 55+10, null);
-            g2.drawImage(Nums.get(12).getScaledInstance(40, 51, Image.SCALE_SMOOTH),  27 * 1+ 407 - 8 +37 * 3, 576 - 55+10, null);
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 37 * 1 + 407 - 8, 576 - 55 + 10, null);
+            g2.drawImage(Nums.get(0).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 37 * 2 + 407 - 8, 576 - 55 + 10, null);
+            g2.drawImage(Nums.get(12).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 407 - 8 + 37 * 3, 576 - 55 + 10, null);
         } else {
             //将ACC转化为整数部分、小数点和小数部分
             char[] aa1 = accS.toCharArray();
-            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[0]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 0 + 317 - 8+15, 576 - 55+10, null);
-            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[1]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 1 + 317 - 8+15, 576 - 55+10, null);
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[0]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 0 + 317 - 8 + 15, 576 - 55 + 10, null);
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[1]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * 1 + 317 - 8 + 15, 576 - 55 + 10, null);
             //打点
-            g2.drawImage(Nums.get(11).getScaledInstance(20, 45, Image.SCALE_SMOOTH),  407 - 8, 576 - 55+15, null);
+            g2.drawImage(Nums.get(11).getScaledInstance(20, 45, Image.SCALE_SMOOTH), 407 - 8, 576 - 55 + 15, null);
 
-            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[3]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1+ 407 - 8, 576 - 55+10, null);
-            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[4]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1+ 407 - 8 +37 * 1, 576 - 55+10, null);
-            g2.drawImage(Nums.get(12).getScaledInstance(40, 51, Image.SCALE_SMOOTH),  27 * 1+ 407 - 8 +37 * 2, 576 - 55+10, null);
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[3]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 407 - 8, 576 - 55 + 10, null);
+            g2.drawImage(Nums.get(Integer.valueOf(String.valueOf(aa1[4]))).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 407 - 8 + 37 * 1, 576 - 55 + 10, null);
+            g2.drawImage(Nums.get(12).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 27 * 1 + 407 - 8 + 37 * 2, 576 - 55 + 10, null);
         }
 
         //MOD
         List<String> mods = convertMOD(bp.getEnabled_mods());
 
-        java.util.Map<String,Integer> modMap = new HashMap<>();
-        modMap.put("DT",0);
-        modMap.put("EZ",1);
-        modMap.put("FL",2);
-        modMap.put("HT",3);
-        modMap.put("HR",4);
-        modMap.put("HD",5);
-        modMap.put("NC",6);
-        modMap.put("NF",7);
-        modMap.put("PF",8);
-        modMap.put("SO",9);
-        modMap.put("SD",10);
+        java.util.Map<String, Integer> modMap = new HashMap<>();
+        modMap.put("DT", 0);
+        modMap.put("EZ", 1);
+        modMap.put("FL", 2);
+        modMap.put("HT", 3);
+        modMap.put("HR", 4);
+        modMap.put("HD", 5);
+        modMap.put("NC", 6);
+        modMap.put("NF", 7);
+        modMap.put("PF", 8);
+        modMap.put("SO", 9);
+        modMap.put("SD", 10);
         //对mods迭代
-        for (int i=0;i<mods.size();i++){
+        for (int i = 0; i < mods.size(); i++) {
             //第一个mod画在1237，第二个画在1237+30,第三个1237-30
-            logger.info("正在绘制mod图标："+mods.get(i));
-            g2.drawImage(Mods.get(modMap.get(mods.get(i))), 1237-(30*i), 375, null);
+            logger.info("正在绘制mod图标：" + mods.get(i));
+            g2.drawImage(Mods.get(modMap.get(mods.get(i))), 1237 - (30 * i), 375, null);
         }
 
 
@@ -913,7 +912,7 @@ public class imgUtil {
         JPEGImageWriteParam jpegParams = new JPEGImageWriteParam(null);
         jpegParams.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
         jpegParams.setCompressionQuality(0.9f);
-        try(FileImageOutputStream fios  = new FileImageOutputStream(
+        try (FileImageOutputStream fios = new FileImageOutputStream(
                 new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".jpg"));) {
             final ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
             // specifies where the jpg image has to be written
