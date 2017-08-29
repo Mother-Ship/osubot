@@ -16,7 +16,7 @@ import top.mothership.osubot.thread.welcomeThread;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
@@ -31,10 +31,16 @@ public class App {
     public static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
     private static String mainRegex = "[!！]([^ ]+)(.*+)";
-    private static String[] msgs = new String[100];
-    private static int i = 0;
-    private static int j = 0;
-    private static int l = 0;
+    private static String imgRegex = "\\[CQ:image,file=(.+)\\](.*)";
+    private static String[] msgs = new String[10];
+    private static int start = 0;
+    private static int end = 0;
+    private static int len = 0;
+    private static List<String> qunAdmin = Arrays.asList("2643555740", "290514894", "89217167", "2307282906", "1594504329"
+            , "2055805091",
+            //从这里开始从后往前拿，Oiso开始
+            "1012621328", "735862173", "1142592265", "526942417", "1205376112",
+            "263202941", "540729251", "245660215", "992931505");
     /*
     业务逻辑:监听群消息，当检测到!stat开头的消息时，分割出后面的用户名，开新线程请求屙屎的api
 
@@ -88,22 +94,22 @@ public class App {
                             //对msg进行反转义
                             msg = msg.replaceAll("&#91;", "[");
                             msg = msg.replaceAll("&#93;", "]");
-
+                            String groupId = null;
+                            String groupName = null;
+                            String fromQQ = null;
+                            if (json.get("fromGroup") != null) {
+                                groupId = json.get("fromGroup").getString();
+                                groupName = json.get("fromGroupName").getString();
+                                fromQQ = json.get("fromQQ").getString();
+                            } else {
+                                fromQQ = json.get("fromQQ").getString();
+                            }
                             //对msg进行识别
                             if (msg.matches(mainRegex)) {
                                 Matcher m = Pattern.compile(mainRegex).matcher(msg);
                                 m.find();
                                 //如果消息匹配正则表达式
-                                String groupId = null;
-                                String groupName = null;
-                                String fromQQ = null;
-                                if (json.get("fromGroup") != null) {
-                                    groupId = json.get("fromGroup").getString();
-                                    groupName = json.get("fromGroupName").getString();
-                                    fromQQ = json.get("fromQQ").getString();
-                                } else {
-                                    fromQQ = json.get("fromQQ").getString();
-                                }
+
 
                                 if (m.group(1).equals("sudo")) {
                                     adminThread at = new adminThread(msg, groupName, groupId, fromQQ, cc);
@@ -116,22 +122,90 @@ public class App {
 
                             } else {
                                 //如果不是感叹号开头的消息，进入禁言识别
-                                //TODO 禁言识别
-                                //把每个msg的hashcode算出来，丢到一个集合里，如果
+
+                                //只记录mp5群消息
+                                if (json.get("act").getString().trim().equals("2") && json.get("fromGroup").getString().equals("201872650")) {
+
+                                    //如果消息带图片就刮掉
+                                    Matcher m = Pattern.compile(imgRegex).matcher(msg);
+                                    if (m.find()) {
+                                        msg = m.group(2);
+                                        if (msg.equals("")) {
+                                            msg = msg.concat("Image");
+                                        }
+                                    }
+                                    //刮掉除了中文英文数字之外的东西
+                                    msg = msg.replaceAll("[^\\u4e00-\\u9fa5a-zA-Z0-9]", "");
+                                    //循环数组
+                                    len++;
+                                    if (len >= 10) {
+                                        len = 10;
+                                        start++;
+                                    }
+                                    if (end == 10) {
+                                        end = 0;
+                                    }
+                                    if (start == 10) {
+                                        start = 0;
+                                    }
+
+                                    msgs[end] = msg;
+                                    end++;
+                                    System.out.println(start + "  " + end);
+                                    System.out.println(Arrays.toString(msgs));
+                                    int count = 0;
+                                    if (start < end) {
+                                        //复读不抓三个字以下的
+                                        for (int i = 0; i < end; i++) {
+                                            if (msg.equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                count++;
+                                            }
+                                        }
+                                    } else {
+                                        for (int i = 0; i < start - 1; i++) {
+                                            if (msg.equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                count++;
+                                            }
+                                        }
+                                        for (int i = end; i < msgs.length; i++) {
+                                            if (msg.equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                count++;
+                                            }
+                                        }
+                                    }
 
 
-                                j++;
-                                msgs[j] = msg;
-                                l++;
-                                if(l>50){
-                                    i++;
-                                    l=50;
+                                    if (count >= 6) {
+                                        String resp;
+                                        if (qunAdmin.contains(fromQQ)) {
+                                            logger.info("检测到群管" + fromQQ+"的复读");
+                                            resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 发现群管" + fromQQ+"的复读行为。" + "\"}";
+
+                                        } else {
+                                            logger.info("正在尝试禁言" + fromQQ);
+                                             resp = "{\"act\": \"121\", \"QQID\": \"" + fromQQ + "\", \"groupid\": \"" + groupId + "\", \"duration\":\"" + 600 + "\"}";
+                                        }
+                                        cc.send(resp);
+                                    }
+
                                 }
-                                if(j>50){
+                                /*
+                                一点小笔记：这里如果采用ArrayList：
+                                比对消息：遍历数组x次(x<50)
+                                插入消息：System.arraycopy(elementData, index, elementData, index + 1,size - index);
 
-                                }
-                                // 当同样消息出现五条之后，开始缓冲消息，
-                                //到100条谁说了第六条就谁复读，判定到复读之后判定是否群管，如果是群管复读艾特群主，如果是群主。。什么也不做（x
+                                如果采用LinkedList：
+                                比对消息：遍历半个数组，25*x次
+                                插入消息：直接在链表最后加上数据
+
+                                而如果采用循环的Array：
+                                比对只需要对数组进行遍历，遍历x次
+                                插入消息：直接指定Array的第x个数
+
+                                HashMap：(HashSet实际上是value固定的HashMap,但是无序、不能重复、只有迭代器才能查找)
+                                计算所有value的HashCode，如果遇到重复的，就原地创建一个LinkedList,把key关联它，把后来的value放在后面，这样最大限度的保证了根据key查找value的效率
+                                */
+
                             }
 
 
