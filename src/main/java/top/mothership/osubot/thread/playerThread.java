@@ -156,6 +156,10 @@ public class playerThread extends Thread {
 
         if (m.group(1).equals("statme")) {
             int userId = dbUtil.getId(fromQQ);
+            if (userId == 0) {
+                sendMsg("你没有绑定默认id。请使用!setid命令。");
+                return;
+            }
             logger.info("检测到对" + userId + "的查询");
             int day = 1;
             if (msg.matches(mainRegexWithNum)) {
@@ -173,6 +177,10 @@ public class playerThread extends Thread {
         if (m.group(1).equals("bpme")) {
             int num = 0;
             int userId = dbUtil.getId(fromQQ);
+            if (userId == 0) {
+                sendMsg("你没有绑定默认id。请使用!setid命令。");
+                return;
+            }
             logger.info("检测到对" + userId + "的BP查询");
             if (msg.matches(mainRegexWithNum)) {
                 if (!checknum(m.group(2).substring(2))) {
@@ -188,7 +196,7 @@ public class playerThread extends Thread {
         if (m.group(1).equals("recent")) {
             int userId = dbUtil.getId(fromQQ);
             if (userId == 0) {
-                sendMsg("你没有绑定默认用户。请使用!setid命令。");
+                sendMsg("你没有绑定默认id。请使用!setid命令。");
                 return;
             }
             logger.info("检测到对" + userId + "的最近游戏记录查询");

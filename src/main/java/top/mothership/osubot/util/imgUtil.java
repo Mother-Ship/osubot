@@ -99,7 +99,6 @@ public class imgUtil {
         }
 
 
-
     }
 
 
@@ -722,19 +721,19 @@ public class imgUtil {
                 g2.drawImage(Images.get(14).getScaledInstance(Images.get(14).getWidth(), Images.get(14).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "X":
-                g2.drawImage(Images.get(21).getScaledInstance(Images.get(21).getWidth(), Images.get(20).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
+                g2.drawImage(Images.get(21).getScaledInstance(Images.get(21).getWidth(), Images.get(21).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "XH":
-                g2.drawImage(Images.get(22).getScaledInstance(Images.get(22).getWidth(), Images.get(21).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
+                g2.drawImage(Images.get(22).getScaledInstance(Images.get(22).getWidth(), Images.get(22).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "S":
-                g2.drawImage(Images.get(18).getScaledInstance(Images.get(18).getWidth(), Images.get(17).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
+                g2.drawImage(Images.get(18).getScaledInstance(Images.get(18).getWidth(), Images.get(18).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "SH":
-                g2.drawImage(Images.get(19).getScaledInstance(Images.get(19).getWidth(), Images.get(18).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
+                g2.drawImage(Images.get(19).getScaledInstance(Images.get(19).getWidth(), Images.get(19).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
             case "F":
-                g2.drawImage(Images.get(15).getScaledInstance(Images.get(15).getWidth(), Images.get(18).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
+                g2.drawImage(Images.get(15).getScaledInstance(Images.get(15).getWidth(), Images.get(15).getHeight(), Image.SCALE_SMOOTH), 1131 - 245, 341 - 242, null);
                 break;
         }
         //右上角Ranking
@@ -910,11 +909,19 @@ public class imgUtil {
         g2.dispose();
 
 
+        BufferedImage result = new BufferedImage(1366, 768, BufferedImage.TYPE_USHORT_555_RGB);
+//        BufferedImage result = new BufferedImage(1366, 768, BufferedImage.TYPE_BYTE_INDEXED);
+        Graphics2D g3 = result.createGraphics();
+        g3.clearRect(0, 0, 1366, 768);
+        g3.drawImage(resizedBG.getScaledInstance(1366, 768, Image.SCALE_SMOOTH), 0, 0, null);
+        g3.dispose();
+        result.flush();
 //        JPEGImageWriteParam jpegParams = new JPEGImageWriteParam(null);
 //        jpegParams.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
 //        jpegParams.setCompressionQuality(1f);
-        try (FileImageOutputStream fios = new FileImageOutputStream(
-                new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".jpg"));) {
+//        (FileImageOutputStream fios = new FileImageOutputStream(
+//                new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".jpg"));)
+        try {
 //            final ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
             // specifies where the jpg image has to be written
 //            writer.setOutput(fios);
@@ -923,14 +930,14 @@ public class imgUtil {
 //            writer.write(null, new IIOImage(resizedBG, null, null), jpegParams);
 //            writer.dispose();
             //改用stackoverflow看到的调整jpg画质的方法，得到了折中方案
-            ImageIO.write(resizedBG, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png"));
-            logger.info("正在压缩图片");
-            Process process = Runtime.getRuntime().exec(cmd + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png\"");
-            try {
-                process.waitFor();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            ImageIO.write(result, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png"));
+//            logger.info("正在压缩图片");
+//            Process process = Runtime.getRuntime().exec(cmd + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png\"");
+//            try {
+//                process.waitFor();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
             return bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png";
         } catch (IOException e) {
             logger.error("绘制图片成品失败");
