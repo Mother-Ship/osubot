@@ -137,11 +137,14 @@ public class playerThread extends Thread {
         if (m.group(1).equals("setid")) {
             String username = m.group(2).substring(1);
             logger.info("尝试将" + username + "绑定到" + fromQQ + "上");
-            int userId = apiUtil.getUser(username, 0).getUser_id();
+            User user = apiUtil.getUser(username, 0);
+            checkFirst(user);
+            int userId = user.getUser_id();
+            //只有这个QQ对应的id是0
             int userIdFromDB = dbUtil.getId(fromQQ);
-            //只有这个玩家没绑定QQ才能执行绑定
             if (userIdFromDB == 0) {
-                if (dbUtil.getQQ(userIdFromDB) == null) {
+                //只有这个id对应的QQ是null
+                if (dbUtil.getQQ(userId) == null) {
                     dbUtil.setId(String.valueOf(fromQQ), userId);
                     sendMsg("将" + username + "绑定到" + fromQQ + "成功");
                 }else{

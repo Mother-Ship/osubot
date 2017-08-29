@@ -322,7 +322,7 @@ public class adminThread extends Thread {
                 e.printStackTrace();
             }
 //            删掉生成的文件
-            delete(filename);
+//            delete(filename);
 
         }
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
