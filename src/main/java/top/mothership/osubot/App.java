@@ -179,7 +179,7 @@ public class App {
                                         String resp;
                                         if (qunAdmin.contains(fromQQ)) {
                                             logger.info("检测到群管" + fromQQ+"的复读");
-                                            resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 发现群管" + fromQQ+"的复读行为。" + "\"}";
+                                            resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 检测到群管" +"[CQ:at,qq="+fromQQ+"] 复读。" + "\"}";
 
                                         } else {
                                             logger.info("正在尝试禁言" + fromQQ);
