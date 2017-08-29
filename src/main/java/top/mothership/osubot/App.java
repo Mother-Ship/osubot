@@ -32,7 +32,7 @@ public class App {
     private static Logger logger = LogManager.getLogger(App.class);
     private static String mainRegex = "[!！]([^ ]+)(.*+)";
     private static String imgRegex = "\\[CQ:image,file=(.+)\\](.*)";
-    private static String[] msgs = new String[10];
+    private static String[] msgs = new String[100];
     private static int start = 0;
     private static int end = 0;
     private static int len = 0;
@@ -138,14 +138,14 @@ public class App {
                                     msg = msg.replaceAll("[^\\u4e00-\\u9fa5a-zA-Z0-9]", "");
                                     //循环数组
                                     len++;
-                                    if (len >= 10) {
-                                        len = 10;
+                                    if (len >= 100) {
+                                        len = 100;
                                         start++;
                                     }
-                                    if (end == 10) {
+                                    if (end == 100) {
                                         end = 0;
                                     }
-                                    if (start == 10) {
+                                    if (start == 100) {
                                         start = 0;
                                     }
 
