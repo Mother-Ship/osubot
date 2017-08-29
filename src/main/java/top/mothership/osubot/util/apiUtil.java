@@ -229,11 +229,11 @@ public class apiUtil {
                         new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
                 //BP的返回结果有时候会有换行，必须手动拼接
                 output = responseBuffer.readLine();
+                //去掉两侧的中括号
+                output = output.substring(1, output.length() - 1);
                 //手动关闭流
                 httpConnection.disconnect();
                 responseBuffer.close();
-                logger.info("获得了" + username + "玩家最近成绩");
-
                 break;
             } catch (IOException e) {
                 logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");

@@ -3,6 +3,8 @@ package top.mothership.osubot.thread;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
+import top.mothership.osubot.pojo.BP;
+import top.mothership.osubot.pojo.Map;
 import top.mothership.osubot.pojo.User;
 import top.mothership.osubot.util.apiUtil;
 import top.mothership.osubot.util.dbUtil;
@@ -290,7 +292,44 @@ public class adminThread extends Thread {
             }
             sendMsg("修改用户组"+role+"的背景图成功。");
         }
+        if ("recent".equals(msg.substring(6, 12))) {
+            String username;
+            try {
+                username = msg.substring(13);
+            } catch (IndexOutOfBoundsException e) {
+                paramError(e);
+                return;
+            }
+
+
+            logger.info("检测到管理员对" + username + "的最近游戏记录查询");
+            User user = apiUtil.getUser(username,0);
+            BP bp = apiUtil.getRecentScore(username,0);
+            if(bp==null){
+                sendMsg("玩家"+user.getUsername()+"最近没有游戏记录。");
+                return;
+            }
+            Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
+            String filename = imgUtil.drawOneBP(user, bp, map);
+            if (filename.equals("error")) {
+                sendMsg("绘图过程中发生致命错误。");
+                return;
+            }
+            sendMsg("[CQ:image,file=" + filename + "]");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+//            删掉生成的文件
+            delete(filename);
+
+        }
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
 
+    }
+    private void delete(String filename) {
+        File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
+        f.delete();
     }
 }

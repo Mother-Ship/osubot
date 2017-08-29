@@ -21,8 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class playerThread extends Thread {
-    private static String mainRegex = "[!！]([^ ]+)(.*+)";
-    private static String mainRegexWithNum = "[!！]([^ ]+)([^#]+) #(\\d+)";
+    private static String mainRegex = "[!！]([^ ]+)(.*)";
+    private static String mainRegexWithNum = "[!！]([^ ]+)([^#]*) #(.+)";
     private String msg;
     private String groupId;
     private String fromQQ;
@@ -74,8 +74,11 @@ public class playerThread extends Thread {
             if (msg.matches(mainRegexWithNum)) {
                 m = Pattern.compile(mainRegexWithNum).matcher(msg);
                 m.find();
+
+                if (!checkDay(m.group(3))) {
+                    return;
+                }
                 day = Integer.valueOf(m.group(3));
-                checkDay(day);
                 username = m.group(2).substring(1);
             } else {
                 username = m.group(2).substring(1);
@@ -106,26 +109,15 @@ public class playerThread extends Thread {
             if (msg.matches(mainRegexWithNum)) {
                 m = Pattern.compile(mainRegexWithNum).matcher(msg);
                 m.find();
-                try {
-                    num = Integer.valueOf(m.group(3));
-                    if (num < 0 || num > 100) {
-                        sendMsg("其他人看不到的东西，白菜也看不到啦。");
-                        logger.info("BP不能大于100或者小于0");
-                        logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                        return;
-                    }
-                } catch (java.lang.NumberFormatException e) {
-                    sendMsg("Ай-ай-ай-ай-ай, что сейчас произошло!");
-                    logger.info("给的BP数目不是int");
-                    logger.info("线程" + this.getName() + "处理完毕，已经退出");
+
+                if (!checknum(m.group(3))) {
                     return;
                 }
+                num = Integer.valueOf(m.group(3));
                 username = m.group(2).substring(1);
             } else {
                 username = m.group(2).substring(1);
             }
-
-
             logger.info("接收到玩家" + username + "的BP查询请求");
 
             if ("白菜".equals(username)) {
@@ -138,51 +130,189 @@ public class playerThread extends Thread {
                 return;
             }
 
-            checkFirst(user);
+            printBP(user, num);
 
-            logger.info("开始获取玩家" + user.getUsername() + "的BP");
-            List<BP> list = apiUtil.getAllBP(user.getUsername(), 0);
-            Calendar c = Calendar.getInstance();
-//        凌晨四点之前，将日期减一
-            if (c.get(Calendar.HOUR_OF_DAY) < 4) {
-                c.add(Calendar.DATE, -1);
-            }
-            c.set(Calendar.HOUR_OF_DAY, 4);
-            c.set(Calendar.MINUTE, 0);
-            c.set(Calendar.SECOND, 0);
-            List<BP> result = new ArrayList<>();
+        }
 
-            for (BP aList : list) {
-                //对BP进行遍历，如果产生时间晚于当天凌晨4点
-                if (aList.getDate().after(c.getTime())) {
-                    result.add(aList);
+        if (m.group(1).equals("setid")) {
+            String username = m.group(2).substring(1);
+            logger.info("尝试将" + username + "绑定到" + fromQQ + "上");
+            int userId = apiUtil.getUser(username, 0).getUser_id();
+            int userIdFromDB = dbUtil.getId(fromQQ);
+            //只有这个玩家没绑定QQ才能执行绑定
+            if (userIdFromDB == 0) {
+                if (dbUtil.getQQ(userIdFromDB) == null) {
+                    dbUtil.setId(String.valueOf(fromQQ), userId);
+                    sendMsg("将" + username + "绑定到" + fromQQ + "成功");
+                }else{
+                    sendMsg("你的osu账号已经绑定了" + fromQQ + "，如果发生错误请联系妈妈船。");
                 }
-            }
-
-            if (num == 0) {
-                logger.info("筛选今日BP成功");
-                if (result.size() == 0) {
-                    sendMsg("玩家" + user.getUsername() + "今天没有更新BP。");
-                    logger.info("没有查到该玩家今天更新的BP");
-                    return;
-                }
-
-                for (BP aList : result) {
-                    //对BP进行遍历，请求API将名称写入
-                    logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
-                    Map map = apiUtil.getMapDetail(aList.getBeatmap_id());
-                    aList.setBeatmap_name(map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]");
-                }
-
-                logger.info("正在绘制今日BP");
-                filename = imgUtil.drawUserBP(user, result);
-                if (filename.equals("error")) {
-                    sendMsg("绘图过程中发生致命错误。");
-                    return;
-                }
-                sendMsg("[CQ:image,file=" + filename + "]");
             } else {
-                //nearest
+                username = apiUtil.getUser(null, userIdFromDB).getUsername();
+                sendMsg("你的QQ已经绑定了" + username + "，如果发生错误请联系妈妈船。");
+            }
+        }
+
+
+        if (m.group(1).equals("statme")) {
+            int userId = dbUtil.getId(fromQQ);
+            logger.info("检测到对" + userId + "的查询");
+            int day = 1;
+            if (msg.matches(mainRegexWithNum)) {
+                //把空格和#去掉
+
+                if (!checkDay(m.group(2).substring(2))) {
+                    return;
+                }
+                day = Integer.valueOf(m.group(2).substring(2));
+            }
+            User user = apiUtil.getUser(null, userId);
+            statUser(user, day);
+        }
+
+        if (m.group(1).equals("bpme")) {
+            int num = 0;
+            int userId = dbUtil.getId(fromQQ);
+            logger.info("检测到对" + userId + "的BP查询");
+            if (msg.matches(mainRegexWithNum)) {
+                if (!checknum(m.group(2).substring(2))) {
+                    return;
+                }
+                num = Integer.valueOf(m.group(2).substring(2));
+            }
+            User user = apiUtil.getUser(null, userId);
+            printBP(user, num);
+        }
+
+
+        if (m.group(1).equals("recent")) {
+            int userId = dbUtil.getId(fromQQ);
+            if (userId == 0) {
+                sendMsg("你没有绑定默认用户。请使用!setid命令。");
+                return;
+            }
+            logger.info("检测到对" + userId + "的最近游戏记录查询");
+            User user = apiUtil.getUser(null, userId);
+            BP bp = apiUtil.getRecentScore(null, userId);
+            if (bp == null) {
+                sendMsg("玩家" + user.getUsername() + "最近没有游戏记录。");
+                return;
+            }
+            Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
+            String filename = imgUtil.drawOneBP(user, bp, map);
+            if (filename.equals("error")) {
+                sendMsg("绘图过程中发生致命错误。");
+                return;
+            }
+            sendMsg("[CQ:image,file=" + filename + "]");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+//            删掉生成的文件
+            delete(filename);
+
+        }
+        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+    }
+
+
+    private boolean checknum(String numString) {
+        try {
+            int num = Integer.valueOf(numString);
+            if (num < 0 || num > 100) {
+                sendMsg("其他人看不到的东西，白菜也看不到啦。");
+                logger.info("BP不能大于100或者小于0");
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                return false;
+            } else {
+                return true;
+            }
+        } catch (java.lang.NumberFormatException e) {
+            sendMsg("Ай-ай-ай-ай-ай, что сейчас произошло!");
+            logger.info("给的BP数目不是int");
+            logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            return false;
+        }
+    }
+
+    private boolean checkDay(String dayString) {
+        try {
+            //取正则第三个参数为3
+            int day = Integer.valueOf(dayString);
+            if (day > (int) ((new java.util.Date().getTime() - new SimpleDateFormat("yyyy-MM-dd").parse("2007-09-16").getTime()) / 1000 / 60 / 60 / 24)) {
+                sendMsg("你要找史前时代的数据吗。");
+                logger.info("指定的日期早于osu!首次发布日期");
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                return false;
+            }
+            if (day < 0) {
+                sendMsg("白菜不会预知未来。");
+                logger.info("天数不能为负值");
+                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                return false;
+            }
+
+        } catch (java.lang.NumberFormatException e) {
+            sendMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
+            logger.info("给的天数不是int值");
+            logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            return false;
+        } catch (ParseException e) {
+            //由于解析的是固定字符串，不会出异常，无视
+        }
+        return true;
+    }
+
+
+    private void printBP(User user, int num) {
+        String filename;
+        checkFirst(user);
+        logger.info("开始获取玩家" + user.getUsername() + "的BP");
+        List<BP> list = apiUtil.getAllBP(user.getUsername(), 0);
+
+        Calendar c = Calendar.getInstance();
+//        凌晨四点之前，将日期减一
+        if (c.get(Calendar.HOUR_OF_DAY) < 4) {
+            c.add(Calendar.DATE, -1);
+        }
+        c.set(Calendar.HOUR_OF_DAY, 4);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        List<BP> result = new ArrayList<>();
+
+        for (BP aList : list) {
+            //对BP进行遍历，如果产生时间晚于当天凌晨4点
+            if (aList.getDate().after(c.getTime())) {
+                result.add(aList);
+            }
+        }
+
+        if (num == 0) {
+            logger.info("筛选今日BP成功");
+            if (result.size() == 0) {
+                sendMsg("玩家" + user.getUsername() + "今天没有更新BP。");
+                logger.info("没有查到该玩家今天更新的BP");
+                return;
+            }
+
+            for (BP aList : result) {
+                //对BP进行遍历，请求API将名称写入
+                logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
+                Map map = apiUtil.getMapDetail(aList.getBeatmap_id());
+                aList.setBeatmap_name(map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]");
+            }
+
+            logger.info("正在绘制今日BP");
+            filename = imgUtil.drawUserBP(user, result);
+            if (filename.equals("error")) {
+                sendMsg("绘图过程中发生致命错误。");
+                return;
+            }
+            sendMsg("[CQ:image,file=" + filename + "]");
+        } else {
+            //nearest
 
 //                    logger.info("正在对"+user.getUsername()+"的BP进行排序……");
 //                    //对list中的bp按日期排序
@@ -197,107 +327,34 @@ public class playerThread extends Thread {
 //                            }
 //                        }
 //                    }
-                if (num > list.size()) {
-                    sendMsg("该玩家没有打出指定的bp……");
-                    logger.info("请求的bp数比玩家bp总数量大");
-                    return;
-                } else {
-                    //list基于0，得-1
-                    BP bp = list.get(num - 1);
-                    logger.info("获得了玩家" + user.getUsername() + "的第" + num + "个BP：" + bp.getBeatmap_id() + "，正在获取歌曲名称");
-                    Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
-
-                    filename = imgUtil.drawOneBP(user, bp, map);
-                    if (filename.equals("error")) {
-                        sendMsg("绘图过程中发生致命错误：本地资源读取失败。");
-                        return;
-                    }
-                    sendMsg("[CQ:image,file=" + filename + "]");
-                }
-            }
-
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-//            删掉生成的文件
-            delete(filename);
-        }
-
-        if (m.group(1).equals("setid")) {
-            String username = m.group(2).substring(1);
-            logger.info("尝试将" + username + "绑定到" + fromQQ + "上");
-            int userId = apiUtil.getUser(username, 0).getUser_id();
-            int userIdFromDB = dbUtil.getId(fromQQ);
-            //只有这个玩家没绑定QQ才能执行绑定
-            if (userIdFromDB==0) {
-                dbUtil.setId(String.valueOf(fromQQ), userId);
-                sendMsg("将" + username + "绑定到" + fromQQ + "成功");
+            if (num > list.size()) {
+                sendMsg("该玩家没有打出指定的bp……");
+                logger.info("请求的bp数比玩家bp总数量大");
+                return;
             } else {
-                username = apiUtil.getUser(null,userIdFromDB).getUsername();
-                sendMsg("你的QQ已经绑定了"+username+"，如果发生错误请联系妈妈船。");
+                //list基于0，得-1
+                BP bp = list.get(num - 1);
+                logger.info("获得了玩家" + user.getUsername() + "的第" + num + "个BP：" + bp.getBeatmap_id() + "，正在获取歌曲名称");
+                Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
+
+                filename = imgUtil.drawOneBP(user, bp, map);
+                if (filename.equals("error")) {
+                    sendMsg("绘图过程中发生致命错误：本地资源读取失败。");
+                    return;
+                }
+                sendMsg("[CQ:image,file=" + filename + "]");
             }
         }
 
-        if (m.group(1).equals("statme")) {
-            int userId = dbUtil.getId(fromQQ);
-            logger.info("检测到对" + userId + "的查询");
-            int day = 1;
-            if (msg.matches(mainRegexWithNum)) {
-                day = Integer.valueOf(m.group(2).substring(1));
-                checkDay(day);
-            }
-            User user = apiUtil.getUser(null, userId);
-            statUser(user, day);
-        }
-        if (m.group(1).equals("bpme")) {
-            int userId = dbUtil.getId(fromQQ);
-            logger.info("检测到对" + userId + "的BP查询");
-            if (msg.matches(mainRegexWithNum)) {
-
-            }
-            User user = apiUtil.getUser(null, userId);
-            statUser(user, day);
-        }
-        if (m.group(1).equals("recent")) {
-            //TODO 最近一个成绩
-
-
-        }
-        logger.info("线程" + this.getName() + "处理完毕，已经退出");
-    }
-
-
-
-    private void checknum(){
-        //TODO 拆开BP的if块进行重构，将这两个方法返回值改为boolean
-    }
-
-    private void checkDay(int day) {
         try {
-            //取正则第三个参数为3
-            if (day > (int) ((new java.util.Date().getTime() - new SimpleDateFormat("yyyy-MM-dd").parse("2007-09-16").getTime()) / 1000 / 60 / 60 / 24)) {
-                sendMsg("你要找史前时代的数据吗。");
-                logger.info("指定的日期早于osu!首次发布日期");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                return;
-            }
-            if (day < 0) {
-                sendMsg("白菜不会预知未来。");
-                logger.info("天数不能为负值");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
-                return;
-            }
-        } catch (java.lang.NumberFormatException e) {
-            sendMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
-            logger.info("给的天数不是int值");
-            logger.info("线程" + this.getName() + "处理完毕，已经退出");
-            return;
-        } catch (ParseException e) {
-            //由于解析的是固定字符串，不会出异常，无视
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+//            删掉生成的文件
+        delete(filename);
     }
+
 
     private void statUser(User userFromAPI, int day) {
 
@@ -329,6 +386,7 @@ public class playerThread extends Thread {
         delete(filename);
     }
 
+
     //减少代码重复量，这个user必须包含用户名
     private void checkFirst(User user) {
         if (dbUtil.getUserRole(user.getUser_id()).equals("notFound")) {
@@ -344,6 +402,7 @@ public class playerThread extends Thread {
             dbUtil.addUserInfo(user, new java.sql.Date(c.getTime().getTime()));
         }
     }
+
 
     private void delete(String filename) {
         File f = new File(rb.getString("path") + "\\data\\image\\" + filename);

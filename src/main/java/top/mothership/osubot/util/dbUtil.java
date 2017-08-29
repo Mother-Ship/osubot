@@ -64,7 +64,23 @@ public class dbUtil {
             return 0;
         }
     }
-
+    public String getQQ(int userId) {
+        String querySql = "SELECT `QQ` FROM `userrole` WHERE `user_id` = ?";
+        try (Connection c = getConnection();
+             PreparedStatement queryPs = c.prepareStatement(querySql)) {
+            queryPs.setInt(1, userId);
+            ResultSet rs = queryPs.executeQuery();
+            if(rs.next()) {
+                return rs.getString("QQ");
+            }else{
+                return null;
+            }
+        } catch (SQLException e) {
+            logger.error("获取userRole表中QQ出错");
+            logger.debug(e.getMessage());
+            return null;
+        }
+    }
     public int setId(String fromQQ,int userId) {
         String querySql = "UPDATE `userrole` SET `QQ` = ? WHERE `user_id` = ?";
         try (Connection c = getConnection();
@@ -78,6 +94,7 @@ public class dbUtil {
             return 0;
         }
     }
+
 
 
     //为!褪裙功能使用
