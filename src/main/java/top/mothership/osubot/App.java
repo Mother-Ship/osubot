@@ -16,7 +16,9 @@ import top.mothership.osubot.thread.welcomeThread;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Timer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +31,10 @@ public class App {
     public static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
     private static String mainRegex = "[!！]([^ ]+)(.*+)";
-
+    private static String[] msgs = new String[100];
+    private static int i = 0;
+    private static int j = 0;
+    private static int l = 0;
     /*
     业务逻辑:监听群消息，当检测到!stat开头的消息时，分割出后面的用户名，开新线程请求屙屎的api
 
@@ -78,7 +83,7 @@ public class App {
 
                         //群消息和私聊消息合并
 
-                        if (json.get("act").getString().trim().equals("2")||json.get("act").getString().trim().equals("21")) {
+                        if (json.get("act").getString().trim().equals("2") || json.get("act").getString().trim().equals("21")) {
                             String msg = json.get("msg").getString();
                             //对msg进行反转义
                             msg = msg.replaceAll("&#91;", "[");
@@ -86,40 +91,51 @@ public class App {
 
                             //对msg进行识别
                             if (msg.matches(mainRegex)) {
-                                Matcher m= Pattern.compile(mainRegex).matcher(msg);
+                                Matcher m = Pattern.compile(mainRegex).matcher(msg);
                                 m.find();
                                 //如果消息匹配正则表达式
-                                String groupId=null;
-                                String groupName=null;
-                                String fromQQ=null;
-                                if(json.get("fromGroup")!=null) {
+                                String groupId = null;
+                                String groupName = null;
+                                String fromQQ = null;
+                                if (json.get("fromGroup") != null) {
                                     groupId = json.get("fromGroup").getString();
                                     groupName = json.get("fromGroupName").getString();
                                     fromQQ = json.get("fromQQ").getString();
-                                }else{
+                                } else {
                                     fromQQ = json.get("fromQQ").getString();
                                 }
 
                                 if (m.group(1).equals("sudo")) {
-                                    adminThread at = new adminThread(msg,groupName,groupId, fromQQ, cc);
+                                    adminThread at = new adminThread(msg, groupName, groupId, fromQQ, cc);
                                     at.start();
                                 } else {
                                     //开启新线程，将msg传入
-                                    playerThread pt = new playerThread(msg,groupName,groupId, fromQQ, cc);
+                                    playerThread pt = new playerThread(msg, groupName, groupId, fromQQ, cc);
                                     pt.start();
                                 }
 
-                            }else{
+                            } else {
                                 //如果不是感叹号开头的消息，进入禁言识别
                                 //TODO 禁言识别
                                 //把每个msg的hashcode算出来，丢到一个集合里，如果
+
+
+                                j++;
+                                msgs[j] = msg;
+                                l++;
+                                if(l>50){
+                                    i++;
+                                    l=50;
+                                }
+                                if(j>50){
+
+                                }
                                 // 当同样消息出现五条之后，开始缓冲消息，
                                 //到100条谁说了第六条就谁复读，判定到复读之后判定是否群管，如果是群管复读艾特群主，如果是群主。。什么也不做（x
                             }
 
 
                         }
-
 
 
                         if (json.get("act").getString().trim().equals("103")) {
@@ -129,8 +145,8 @@ public class App {
                             String groupId = json.get("fromGroup").getString();
                             String fromQQ = json.get("fromQQ").getString();
 
-                            welcomeThread wt = new welcomeThread(groupId,beingOperateQQ, cc);
-                            logger.info("检测到【" + groupId + "】的由"+fromQQ+"操作的成员新增："
+                            welcomeThread wt = new welcomeThread(groupId, beingOperateQQ, cc);
+                            logger.info("检测到【" + groupId + "】的由" + fromQQ + "操作的成员新增："
                                     + beingOperateQQ + ",已交给线程" + wt.toString() + "处理");
                             wt.start();
 

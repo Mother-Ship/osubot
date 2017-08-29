@@ -7,11 +7,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -56,20 +53,7 @@ public class pageUtil {
 
                 break;
             } catch (IOException e) {
-//                if(e.getMessage().equals("Unsupported Image Type")){
-//                    try {
-//                        BufferedImage image = ImageIO.read(httpConnection.getInputStream());
-//                        ImageOutputStream output = ImageIO.createImageOutputStream(cmykJPEGFile);
-//                        if (!ImageIO.write(image, "jpg", output)) {
-//                            logger.info("-----cmyk转化异常:{}-----");
-//                        }
-//
-//                    } catch (IOException e1) {
-//                        logger.info("-----cmyk转化异常:{}-----", e1.getMessage());
-//                    }
-//                }
                 logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
-
                 retry++;
             } catch (InterruptedException e) {
                 e.printStackTrace();
