@@ -151,8 +151,6 @@ public class App {
 
                                     msgs[end] = msg;
                                     end++;
-                                    System.out.println(start + "  " + end);
-                                    System.out.println(Arrays.toString(msgs));
                                     int count = 0;
                                     if (start < end) {
                                         //复读不抓三个字以下的
