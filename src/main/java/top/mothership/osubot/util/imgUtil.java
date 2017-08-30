@@ -179,23 +179,27 @@ public class imgUtil {
 //        int scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(),1,2000);
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage ava = null;
-        BufferedImage bg = null;
-        BufferedImage resizedAva = null;
-        BufferedImage defaultBG = null;
+        BufferedImage bg;
+        BufferedImage resizedAva;
         BufferedImage scoreRankBG = null;
         try {
             scoreRankBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("scoreRankBG")));
-            bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
+            bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + userFromAPI.getUser_id() + ".png"));
         } catch (IOException e) {
             //所有没有独立bg的都采用默认bg
             //为了防止错乱，尝试使用获取子图片的方法
             try {
-                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("defaultbg")));
+                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
             } catch (IOException e1) {
-                logger.error("读取stat的本地资源失败");
-                logger.error(e1.getMessage());
-                return "error";
+                try {
+                    bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("defaultbg")));
+                } catch (IOException e2) {
+                    logger.error("读取stat的本地资源失败");
+                    logger.error(e1.getMessage());
+                    return "error";
+                }
             }
+
         }
 
         //将布局图片初始化

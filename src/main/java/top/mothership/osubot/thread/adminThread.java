@@ -247,13 +247,13 @@ public class adminThread extends Thread {
 
         if ("bg".equals(msg.substring(6, 8))) {
             String img;
-            String role;
+            String param;
             BufferedImage bg;
             String URL;
             try {
 //                int a = msg.indexOf("[");
                 int a = msg.indexOf("http");
-                role = msg.substring(9, a - 1);
+                param = msg.substring(9, a - 1);
                 URL = msg.substring(a);
 //                img = msg.substring(a + 15, msg.length() - 1).concat(".cqimg");
             } catch (IndexOutOfBoundsException e) {
@@ -286,14 +286,14 @@ public class adminThread extends Thread {
             //并不需要删除旧图片
             try {
                 logger.info("开始将新背景写入硬盘");
-                ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
+                ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + param + ".png"));
             } catch (IOException e) {
                 logger.error("将新背景写入硬盘失败");
                 logger.error(e.getMessage());
                 sendMsg("将新背景写入硬盘失败。");
                 return;
             }
-            sendMsg("修改用户组"+role+"的背景图成功。");
+            sendMsg("修改用户/用户组"+param+"的背景图成功。");
         }
         if ("recent".equals(msg.substring(6, 12))) {
             String username;
