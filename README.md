@@ -21,7 +21,7 @@
 
 ### 命令列表：
 ------
-`!stat <username> #<day> `
+`!stat <String:username> #<int:day> `
 
 查询指定玩家数据，并根据day参数进行对比，**绘制图片**并返回。
 
@@ -33,31 +33,47 @@
 
 
 
-`!bp <username>`
+`!bp <String:username> #<int:rank>`
 
-~~简单的返回指定玩家今天更新的bp。~~
-现在接受# <rank>参数。返回BP榜上100个BP里，指定位置的BP。
+如果不带rank参数，则返回指定玩家 今天更新的bp。
 
+现在接受#<rank>参数。返回BP榜上100个BP里，指定位置的BP。
 
+`!setid <String:username>`
 
+将某个osu id绑定在你的QQ号上以便使用下列命令：
+
+`!bpme #<int:rank>`
+
+使用绑定的QQ查询BP
+
+`!statme #<int:day>`
+
+使用绑定的id查询玩家信息
+
+`!recent`
+
+使用绑定的id查询最近的一次游戏记录（包括Fail/Retry的记录。普通用户不开放查询其他玩家。）
+
+------
 #### 以下命令只有配置文件中指定的管理员QQ发送才有效，并且都支持私聊。
 ------
 
-`!sudo add <username1>,<username2>,... <role>`
+`!sudo add <String:username1>,<String:username2>,... <String:role>`
 
 将指定玩家加入数据库。如果传入的是单个玩家，则返回一张默认的stat名片。
 
-`!sudo del <username1>,<username2>,...`
+`!sudo del <String:username1>,<String:username2>,...`
 
 将指定玩家的权限恢复默认。预置的默认值是"creep"，来自Dota 2中的小兵。
 
 以上两条命令会返回重置/修改成功的玩家，新增的玩家，不存在的玩家，以及出现网络错误的玩家。
 
-`!sudo check <username>`
+`!sudo check <String:username>`
 
 只接受单个玩家作为参数，返回玩家的权限。如果玩家没有使用过，也返回相应的提示。
 
-`!sudo 退群 <role>`
+`!sudo 退群 <String:role>`
 
 作为作者恶趣味的产物，"褪裙"也会被识别。
 
@@ -70,9 +86,23 @@
 
 ~~`!sudo bg <role> <image>`~~
 
-`!sudo bg <role> <imageURL>`
+`!sudo bg <String:role> <String:imageURL>`
 
 将指定的图片设置为指定的用户组所用的背景图，图片~~直接以普通表情的形式发送即可~~实际使用会由于QQ压缩大图，严重影响视觉效果。改为使用URL作为参数，推荐使用imgur（不支持puush）。请务必注意图片的尺寸。
 
 返回成功提示/相应的错误信息。
+
+`!sudo recent <String:username>`
+
+查找指定玩家的最近游戏记录。（防止滥用不开放并不代表权限狗不能用啊。）
+
+
+`!sudo afk <int:day>:<String:role>`
+
+查询指定用户组中所有玩家，如果有最近活跃时间在day天之前就列出，以便进行下一步处理。
+
+`!sudo smoke <int:QQ>:<int:Second>`
+
+在当前群将指定QQ禁言指定的秒数。这时候机器人使用的QQ必须有管理员权限。
+
 
