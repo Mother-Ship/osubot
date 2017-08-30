@@ -368,6 +368,30 @@ public class adminThread extends Thread {
             }
             sendMsg(resp);
         }
+        if ("smoke".equals(msg.substring(6, 11))) {
+            String QQ;
+            int index = 0;
+            int sec = 0;
+            try {
+                index = msg.indexOf(":");
+                if(index == -1){
+                    sec = 600;
+                    QQ = msg.substring(12);
+                }else{
+                    sec = Integer.valueOf(msg.substring(index + 1));
+                    QQ = msg.substring(12,index);
+                }
+
+            } catch (IndexOutOfBoundsException e) {
+                paramError(e);
+                return;
+            }
+            logger.info(fromQQ+"使用命令禁言了"+QQ+" "+sec+"秒");
+            String resp = "{\"act\": \"121\", \"QQID\": \"" + QQ + "\", \"groupid\": \"" + groupId + "\", \"duration\":\"" + sec + "\"}";
+            cc.send(resp);
+        }
+
+
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
 
     }

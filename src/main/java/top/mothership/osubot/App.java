@@ -32,7 +32,7 @@ public class App {
     private static Logger logger = LogManager.getLogger(App.class);
     private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([^\\u4e00-\\u767c\\u767e-\\u83db\\u83dd-\\u9fa5]*+)";
     private static String imgRegex = "\\[CQ:image,file=(.+)\\](.*)";
-    private static String[] msgs = new String[100];
+    private static String[] msgs = new String[200];
     private static int start = 0;
     private static int end = 0;
     private static int len = 0;
@@ -124,9 +124,9 @@ public class App {
                             } else {
                                 //如果不是感叹号开头的消息，进入禁言识别
 
-                                //只记录mp5群消息
-                                if (json.get("act").getString().trim().equals("2") && json.get("fromGroup").getString().equals("201872650")) {
-
+                                //如果是群消息
+                                if (json.get("act").getString().trim().equals("2")) {
+                                    int count = 0;
                                     //如果消息带图片就刮掉
                                     Matcher m = Pattern.compile(imgRegex).matcher(msg);
                                     if (m.find()) {
@@ -138,51 +138,53 @@ public class App {
                                     //刮掉除了中文英文数字之外的东西
                                     msg = msg.replaceAll("[^\\u4e00-\\u9fa5a-zA-Z0-9]", "");
                                     //循环数组
-                                    len++;
-                                    if (len >= 100) {
-                                        len = 100;
-                                        start++;
-                                    }
-                                    if (end == 100) {
-                                        end = 0;
-                                    }
-                                    if (start == 100) {
-                                        start = 0;
-                                    }
+                                    if (groupId.equals("201872650")||groupId.equals("564679329")) {
+                                        len++;
+                                        if (len >= 200) {
+                                            len = 200;
+                                            start++;
+                                        }
+                                        if (end == 200) {
+                                            end = 0;
+                                        }
+                                        if (start == 200) {
+                                            start = 0;
+                                        }
+                                        //把群号拼在字符串上
+                                        msgs[end] = groupId+msg;
+                                        end++;
 
-                                    msgs[end] = msg;
-                                    end++;
-                                    int count = 0;
-                                    if (start < end) {
-                                        //复读不抓三个字以下的
-                                        for (int i = 0; i < end; i++) {
-                                            if (msg.equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
-                                                count++;
+                                        if (start < end) {
+                                            //复读不抓三个字以下的和纯图片
+                                            for (int i = 0; i < end; i++) {
+                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                    count++;
+                                                }
+                                            }
+                                        } else {
+                                            for (int i = 0; i < start - 1; i++) {
+                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                    count++;
+                                                }
+                                            }
+                                            for (int i = end; i < msgs.length; i++) {
+                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                    count++;
+                                                }
                                             }
                                         }
-                                    } else {
-                                        for (int i = 0; i < start - 1; i++) {
-                                            if (msg.equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
-                                                count++;
-                                            }
-                                        }
-                                        for (int i = end; i < msgs.length; i++) {
-                                            if (msg.equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
-                                                count++;
-                                            }
-                                        }
-                                    }
 
+                                    }
 
                                     if (count >= 6) {
                                         String resp;
                                         if (qunAdmin.contains(fromQQ)) {
-                                            logger.info("检测到群管" + fromQQ+"的复读");
-                                            resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 检测到群管" +"[CQ:at,qq="+fromQQ+"] 复读。" + "\"}";
+                                            logger.info("检测到群管" + fromQQ + "的复读");
+                                            resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 检测到群管" + "[CQ:at,qq=" + fromQQ + "] 复读。" + "\"}";
 
                                         } else {
                                             logger.info("正在尝试禁言" + fromQQ);
-                                             resp = "{\"act\": \"121\", \"QQID\": \"" + fromQQ + "\", \"groupid\": \"" + groupId + "\", \"duration\":\"" + 600 + "\"}";
+                                            resp = "{\"act\": \"121\", \"QQID\": \"" + fromQQ + "\", \"groupid\": \"" + groupId + "\", \"duration\":\"" + 600 + "\"}";
                                         }
                                         cc.send(resp);
                                     }

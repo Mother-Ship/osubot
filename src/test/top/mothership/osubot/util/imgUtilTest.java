@@ -28,14 +28,6 @@ import java.util.regex.Pattern;
 public class imgUtilTest extends TestCase {
     private final String getUserURL = "https://osu.ppy.sh/u/";
     public void testDrawOneBP() throws Exception {
-
-        Document doc = Jsoup.connect(getUserURL + "2").get();
-
-        Elements link = doc.select("time[class*=timeago]");
-        String a = link.text();
-        a = a.substring(0,19);
-
-        Date date2 = new Date(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(a).getTime()+8*3600*1000);
     }
 }
 

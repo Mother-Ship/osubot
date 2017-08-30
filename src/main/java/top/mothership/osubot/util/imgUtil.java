@@ -891,7 +891,7 @@ public class imgUtil {
         for (int i = 0; i < mods.size(); i++) {
             //第一个mod画在1237，第二个画在1237+30,第三个1237-30
             logger.info("正在绘制mod图标：" + mods.get(i));
-            g2.drawImage(Mods.get(modMap.get(mods.get(i))), 1237 - (30 * i), 375, null);
+            g2.drawImage(Mods.get(modMap.get(mods.get(i))), 1237 - (50 * i), 375, null);
         }
 
 
