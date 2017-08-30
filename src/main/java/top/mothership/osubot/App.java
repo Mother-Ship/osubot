@@ -157,18 +157,18 @@ public class App {
                                         if (start < end) {
                                             //复读不抓三个字以下的和纯图片
                                             for (int i = 0; i < end; i++) {
-                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
                                                     count++;
                                                 }
                                             }
                                         } else {
                                             for (int i = 0; i < start - 1; i++) {
-                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
                                                     count++;
                                                 }
                                             }
                                             for (int i = end; i < msgs.length; i++) {
-                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() > 3) {
+                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
                                                     count++;
                                                 }
                                             }
