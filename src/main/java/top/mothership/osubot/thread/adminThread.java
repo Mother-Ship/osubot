@@ -9,7 +9,7 @@ import top.mothership.osubot.pojo.User;
 import top.mothership.osubot.util.apiUtil;
 import top.mothership.osubot.util.dbUtil;
 import top.mothership.osubot.util.imgUtil;
-
+import top.mothership.osubot.util.pageUtil;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -18,6 +18,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Date;
 import java.util.*;
 
 /**
@@ -31,6 +32,7 @@ public class adminThread extends Thread {
     private top.mothership.osubot.util.apiUtil apiUtil = new apiUtil();
     private top.mothership.osubot.util.dbUtil dbUtil = new dbUtil();
     private top.mothership.osubot.util.imgUtil imgUtil = new imgUtil();
+    private pageUtil pageUtil = new pageUtil();
     private Logger logger = LogManager.getLogger(this.getClass());
     private ResourceBundle rb;
     private List<String> admin;
@@ -322,8 +324,49 @@ public class adminThread extends Thread {
                 e.printStackTrace();
             }
 //            删掉生成的文件
-//            delete(filename);
+            delete(filename);
 
+        }
+        if ("afk".equals(msg.substring(6, 9))) {
+            int day;
+            String resp;
+            String role;
+            int index;
+            try {
+                index = msg.indexOf(":");
+                if(index == -1){
+                    role = "mp5";
+                    day = Integer.valueOf(msg.substring(10));
+                }else{
+                    role = msg.substring(index + 1);
+                    day = Integer.valueOf(msg.substring(10,index));
+                }
+
+            } catch (IndexOutOfBoundsException e) {
+                paramError(e);
+                return;
+            }
+            logger.info("检测到管理员对" + day + "天前的AFK玩家查询");
+
+            Calendar cl = Calendar.getInstance();
+            cl.add(Calendar.DATE, -day);
+            java.sql.Date date = new Date(cl.getTimeInMillis());
+
+            List<Integer> list = dbUtil.listUserInfoByRole(role);
+            List<String> afkList = new ArrayList<>();
+            logger.info("开始查询"+role+"用户组中"+day+"天前的AFK玩家");
+            for(int i=0;i<list.size();i++){
+                if(pageUtil.getLastActive(list.get(i)).before(date)){
+                    afkList.add(apiUtil.getUser(null,list.get(i)).getUsername());
+                }
+            }
+            resp = "查询"+role+"用户组中"+day+"天前的AFK玩家完成。";
+            if (afkList.size() > 0) {
+                resp = resp.concat("\\n查询到" + role + "用户组中，以下玩家：" + afkList.toString() + "最后登录时间在"+day+"天前。");
+            } else {
+                resp = resp.concat("\\n没有检测" + role + "用户组中PP溢出的玩家。");
+            }
+            sendMsg(resp);
         }
         logger.info("线程" + this.getName() + "处理完毕，已经退出");
 

@@ -11,6 +11,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Created by QHS on 2017/8/18.
@@ -18,7 +21,8 @@ import java.net.URL;
 public class pageUtil {
     private Logger logger = LogManager.getLogger(this.getClass());
     private final String getAvaURL = "https://a.ppy.sh/";
-    private final String getUserURL = "https://osu.ppy.sh/pages/include/profile-general.php?u=";
+    private final String getUserURL = "https://osu.ppy.sh/u/";
+    private final String getUserProfileURL = "https://osu.ppy.sh/pages/include/profile-general.php?u=";
     private final String getBGURL = "http://bloodcat.com/osu/i/";
     //后续在这个类里解析dom树获取网页内容
     //将异常抛出给调用者
@@ -74,10 +78,10 @@ public class pageUtil {
         while (retry < 5) {
             try {
                 logger.info("正在获取" + uid + "的Replays被观看次数");
-                doc = Jsoup.connect(getUserURL + uid).get();
+                doc = Jsoup.connect(getUserProfileURL + uid).get();
                 break;
             } catch (IOException e) {
-                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + retry + 1 + "次");
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1)  + "次");
                 retry++;
             }
         }
@@ -99,8 +103,6 @@ public class pageUtil {
         //第一次写二分法……不过大部分时间都花在算准确页数，和拿页面元素上了
         while (start <= end) {
             int middle = (start + end) / 2;
-
-
             long middleValue = getScore(middle);
 
             if (middleValue == 0) {
@@ -145,4 +147,34 @@ public class pageUtil {
         return Long.valueOf(doc.select("td[class*=focused]").get(num).child(0).attr("title").replace(",",""));
 
     }
+
+    public Date getLastActive(int uid){
+        int retry = 0;
+        Document doc = null;
+        while (retry < 5) {
+            try {
+                logger.info("正在获取" + uid + "的上次活跃时间");
+                doc = Jsoup.connect(getUserURL + uid).get();
+                break;
+            } catch (IOException e) {
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
+                retry++;
+            }
+        }
+        if (retry == 5) {
+            logger.error("玩家" + uid + "请求API获取数据，失败五次");
+            return null;
+        }
+        Elements link = doc.select("time[class*=timeago]");
+        String a = link.get(1).text();
+        a = a.substring(0,19);
+        try {
+            //转换为北京时间
+            return new Date(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(a).getTime()+8*3600*1000);
+        } catch (ParseException e) {
+            logger.error("将时间转换为Date对象出错");
+        }
+        return null;
+    }
+
 }

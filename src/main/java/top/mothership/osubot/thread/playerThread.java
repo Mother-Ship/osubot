@@ -138,6 +138,10 @@ public class playerThread extends Thread {
             String username = m.group(2).substring(1);
             logger.info("尝试将" + username + "绑定到" + fromQQ + "上");
             User user = apiUtil.getUser(username, 0);
+            if(user==null){
+                sendMsg("没有在官网找到该玩家。");
+                return;
+            }
             checkFirst(user);
             int userId = user.getUser_id();
             //只有这个QQ对应的id是0

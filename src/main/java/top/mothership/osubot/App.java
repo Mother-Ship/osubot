@@ -30,7 +30,7 @@ public class App {
     public static WebSocketClient cc;
     public static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
-    private static String mainRegex = "[!！]([^ ]+)(.*+)";
+    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)(.*+)";
     private static String imgRegex = "\\[CQ:image,file=(.+)\\](.*)";
     private static String[] msgs = new String[100];
     private static int start = 0;
