@@ -30,7 +30,7 @@ public class App {
     public static WebSocketClient cc;
     public static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
-    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)(.*+)";
+    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([^\\u4e00-\\u767c\\u767e-\\u83db\\u83dd-\\u9fa5]*+)";
     private static String imgRegex = "\\[CQ:image,file=(.+)\\](.*)";
     private static String[] msgs = new String[100];
     private static int start = 0;
@@ -80,6 +80,7 @@ public class App {
 
                 public void onMessage(String message) {
                     try {
+
                         //
                         JSON json = JSON.parse(message);
                         //原作者使用了String.format，我尝试使用.getString方法。其实我没用过这个json解析器……
