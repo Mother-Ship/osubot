@@ -6,12 +6,7 @@ import top.mothership.osubot.pojo.BP;
 import top.mothership.osubot.pojo.Map;
 import top.mothership.osubot.pojo.User;
 
-import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
-import javax.imageio.stream.FileImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -29,16 +24,10 @@ import java.util.List;
 public class imgUtil {
     //不用this，直接指明类就可以了
     private static Logger logger = LogManager.getLogger("imgUtil.class");
-
-    /*设计这个方法
-    它应该输入username，应该输出一张完整的stat图的路径
-    */
-    private pageUtil pageUtil = new pageUtil();
     private static ResourceBundle rb = ResourceBundle.getBundle("cabbage");
     private static List<BufferedImage> Images;
     private static List<BufferedImage> Nums;
     private static List<BufferedImage> Mods;
-
     private static BufferedImage A;
     private static BufferedImage B;
     private static BufferedImage C;
@@ -101,6 +90,10 @@ public class imgUtil {
 
     }
 
+    /*设计这个方法
+    它应该输入username，应该输出一张完整的stat图的路径
+    */
+    private pageUtil pageUtil = new pageUtil();
 
     private void draw(Graphics2D g2, String color, String font, String size, String text, String x, String y) {
         //指定颜色
@@ -180,8 +173,8 @@ public class imgUtil {
         return mods;
     }
 
-    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near) {
-        int scoreRank = 0;
+    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near,int scoreRank) {
+
 //        logger.info("尝试使用二分法获取"+userFromAPI.getUsername()+"的scoreRank");
 //        int scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(),1,2000);
         //准备资源：背景图和用户头像，以及重画之后的用户头像
@@ -189,9 +182,9 @@ public class imgUtil {
         BufferedImage bg = null;
         BufferedImage resizedAva = null;
         BufferedImage defaultBG = null;
-        BufferedImage layout = null;
+        BufferedImage scoreRankBG = null;
         try {
-            layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("userlayout")));
+            scoreRankBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("scoreRankBG")));
             bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
         } catch (IOException e) {
             //所有没有独立bg的都采用默认bg
@@ -207,8 +200,7 @@ public class imgUtil {
 
         //将布局图片初始化
         Graphics2D g2 = (Graphics2D) bg.getGraphics();
-        //把布局画到bg上
-        g2.drawImage(layout, 0, 0, null);
+
         try {
             //此处传入的应该是用户的数字id
             ava = pageUtil.getAvatar(userFromAPI.getUser_id());
@@ -264,7 +256,13 @@ public class imgUtil {
 
 
         if (scoreRank > 0) {
-            draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", Integer.toString(scoreRank), "scoreRankx", "scoreRanky");
+            //把scorerank用到的bg画到bg上
+            g2.drawImage(scoreRankBG, 653, 7, null);
+            if(scoreRank<100){
+                draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", "#"+Integer.toString(scoreRank), "scoreRank2x", "scoreRank2y");
+            }else {
+                draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", "#"+Integer.toString(scoreRank), "scoreRankx", "scoreRanky");
+            }
         }
 
         //绘制RankedScore
@@ -494,8 +492,8 @@ public class imgUtil {
         }
 
         //规划出结果图的尺寸(2行BP数量*2行BP图高度+3行BP数量*3行BP高度)
-        BufferedImage result = new BufferedImage(width, bpMid2Height * (1 + bp2.size()) + bpMid3Height * +bp3.size(), BufferedImage.TYPE_INT_RGB);
-
+        BufferedImage result = new BufferedImage(width, bpTopHeight + bpMid2Height * bp2.size() + bpMid3Height * +bp3.size(), BufferedImage.TYPE_INT_RGB);
+        logger.info("开始绘制头部");
 
         //在头部图片上绘制用户名
         Graphics2D g2 = (Graphics2D) bpTop.getGraphics();
@@ -513,7 +511,7 @@ public class imgUtil {
         ImageArrayTop = bpTop.getRGB(0, 0, width, bpTopHeight, ImageArrayTop, 0, width);
         //将头部图片先画上去
         result.setRGB(0, 0, width, bpTopHeight, ImageArrayTop, 0, width);
-
+        logger.info("头部图片绘制完成");
 
         for (int i = 0; i < bp2.size(); i++) {
             String mods;
@@ -569,14 +567,14 @@ public class imgUtil {
             int[] ImageArray = new int[width * bpMid2Height];
             ImageArray = bpmids2.get(i).getRGB(0, 0, width, bpMid2Height, ImageArray, 0, width);
             //横坐标是0，纵坐标是i+1*每个格子的高度，大小是每个格子的宽高
-            result.setRGB(0, bpMid2Height * (i + 1), width, bpMid2Height, ImageArray, 0, width);//将数组写入缓冲图片
+            result.setRGB(0, bpMid2Height * i + bpTopHeight, width, bpMid2Height, ImageArray, 0, width);//将数组写入缓冲图片
             logger.info("绘制" + bp2.get(i).getBeatmap_name() + "完成");
         }
         logger.info("无需使用大背景的BP绘制完成");
         for (int i = 0; i < bp3.size(); i++) {
             String mods;
             if (bp3.get(i).getEnabled_mods() > 0) {
-                mods = convertMOD(bp2.get(i).getEnabled_mods()).toString().substring(1, convertMOD(bp2.get(i).getEnabled_mods()).toString().length() - 1);
+                mods = convertMOD(bp3.get(i).getEnabled_mods()).toString().substring(1, convertMOD(bp3.get(i).getEnabled_mods()).toString().length() - 1);
             } else {
                 mods = "None";
             }
@@ -632,7 +630,7 @@ public class imgUtil {
             int[] ImageArray = new int[width * bpMid3Height];
             ImageArray = bpmids3.get(i).getRGB(0, 0, width, bpMid3Height, ImageArray, 0, width);
             //横坐标是0，纵坐标是i*每个格子的高度（没有头图不用+1），还要加上bp2占用的高度+1（头图。+1在这里），大小是每个格子的宽高
-            result.setRGB(0, bpMid3Height * (i) + bpMid2Height * (bp2.size() + 1), width, bpMid3Height, ImageArray, 0, width);
+            result.setRGB(0, bpMid3Height * (i) + bpMid2Height * (bp2.size()) + bpTopHeight, width, bpMid3Height, ImageArray, 0, width);
             logger.info("绘制" + bp3.get(i).getBeatmap_name() + "完成");
         }
         //生成新图片

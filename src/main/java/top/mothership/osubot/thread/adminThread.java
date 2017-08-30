@@ -141,10 +141,11 @@ public class adminThread extends Thread {
                             c.add(Calendar.DAY_OF_MONTH,-1);
                         }
                         dbUtil.addUserInfo(user,new java.sql.Date(c.getTime().getTime()));
+                        int scoreRank = pageUtil.getRank(user.getRanked_score(),1,2000);
                         logger.info("将用户" + user.getUsername() + "添加到数据库。");
                         if (usernames.length == 1) {
                             logger.info("新增单个用户，绘制名片");
-                            img = imgUtil.drawUserInfo(user, null, role, 0,false);
+                            img = imgUtil.drawUserInfo(user, null, role, 0,false,scoreRank);
                         }
                         addList.add(user.getUsername());
                     } else {
@@ -285,7 +286,7 @@ public class adminThread extends Thread {
             //并不需要删除旧图片
             try {
                 logger.info("开始将新背景写入硬盘");
-                ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\bg\\" + role + ".png"));
+                ImageIO.write(bg, "png", new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
             } catch (IOException e) {
                 logger.error("将新背景写入硬盘失败");
                 logger.error(e.getMessage());

@@ -9,6 +9,7 @@ import top.mothership.osubot.pojo.User;
 import top.mothership.osubot.util.apiUtil;
 import top.mothership.osubot.util.dbUtil;
 import top.mothership.osubot.util.imgUtil;
+import top.mothership.osubot.util.pageUtil;
 
 import java.io.File;
 import java.text.ParseException;
@@ -33,6 +34,7 @@ public class playerThread extends Thread {
     private imgUtil imgUtil = new imgUtil();
     private apiUtil apiUtil = new apiUtil();
     private dbUtil dbUtil = new dbUtil();
+    private pageUtil pageUtil = new pageUtil();
     private ResourceBundle rb;
     private Matcher m;
     private boolean group = false;
@@ -318,8 +320,6 @@ public class playerThread extends Thread {
                 Map map = apiUtil.getMapDetail(aList.getBeatmap_id());
                 aList.setBeatmap_name(map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]");
             }
-
-            logger.info("正在绘制今日BP");
             filename = imgUtil.drawUserBP(user, result);
             if (filename.equals("error")) {
                 sendMsg("绘图过程中发生致命错误。");
@@ -385,8 +385,13 @@ public class playerThread extends Thread {
         }
 
         String role = dbUtil.getUserRole(userFromAPI.getUser_id());
-
-        String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near);
+        int scoreRank=0;
+        if(userFromAPI.getUser_id()==1244312){
+            scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 6082);
+        }else {
+            scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 2000);
+        }
+        String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near,scoreRank);
         if (filename.equals("error")) {
             sendMsg("绘图过程中发生致命错误。");
         }

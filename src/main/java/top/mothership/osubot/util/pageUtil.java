@@ -100,6 +100,9 @@ public class pageUtil {
         if (rScore < endValue||endValue==0) {
             return 0;
         }
+        if (rScore == endValue) {
+            return end;
+        }
         //第一次写二分法……不过大部分时间都花在算准确页数，和拿页面元素上了
         while (start <= end) {
             int middle = (start + end) / 2;
@@ -122,12 +125,13 @@ public class pageUtil {
     }
 
 
-    public long getScore(int rank){
+    private long getScore(int rank){
         Document doc = null;
         int retry = 0;
         logger.info("正在抓取#"+rank+"的玩家的分数");
         //一定要把除出来的值强转
-        int p = Math.round((float) rank/50);
+        //math.round好像不太对，应该是ceil
+        int p = (int)Math.ceil((float) rank/50);
         //获取当前rank在当前页的第几个
         int num = (rank-1)%50;
         while (retry < 5) {
@@ -144,7 +148,8 @@ public class pageUtil {
             logger.error("查询分数失败五次");
             return 0;
         }
-        return Long.valueOf(doc.select("td[class*=focused]").get(num).child(0).attr("title").replace(",",""));
+        String score = doc.select("td[class*=focused]").get(num).child(0).attr("title");
+        return Long.valueOf(score.replace(",",""));
 
     }
 
