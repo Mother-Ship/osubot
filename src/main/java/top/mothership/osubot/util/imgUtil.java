@@ -36,12 +36,11 @@ public class imgUtil {
     private static BufferedImage XH;
     private static BufferedImage S;
     private static BufferedImage SH;
-    private static String cmd = "\"" + rb.getString("path") + "\\data\\image\\resource\\pngquant.exe\" -f --ext .png --ordered --speed=1 --quality=50-100 \"" + rb.getString("path") + "\\data\\image\\";
 
     static {
         final Path resultPath = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
         //使用NIO扫描文件夹
-        final List<File> resultFiles = new ArrayList<File>();
+        final List<File> resultFiles = new ArrayList<>();
         Images = new ArrayList<>();
         Nums = new ArrayList<>();
         Mods = new ArrayList<>();
@@ -99,7 +98,7 @@ public class imgUtil {
         //指定颜色
         g2.setPaint(Color.decode(rb.getString(color)));
         //指定字体
-        g2.setFont(new Font(rb.getString(font), 0, Integer.decode(rb.getString(size))));
+        g2.setFont(new Font(rb.getString(font), Font.PLAIN, Integer.decode(rb.getString(size))));
         //指定坐标
         g2.drawString(text, Integer.decode(rb.getString(x)), Integer.decode(rb.getString(y)));
 
@@ -175,8 +174,6 @@ public class imgUtil {
 
     public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near,int scoreRank) {
 
-//        logger.info("尝试使用二分法获取"+userFromAPI.getUsername()+"的scoreRank");
-//        int scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(),1,2000);
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage ava = null;
         BufferedImage bg;
@@ -201,7 +198,7 @@ public class imgUtil {
             }
 
         }
-
+        logger.info("正在获取头像");
         //将布局图片初始化
         Graphics2D g2 = (Graphics2D) bg.getGraphics();
 
@@ -217,8 +214,8 @@ public class imgUtil {
             //进行缩放
             if (ava.getHeight() > 128 || ava.getWidth() > 128) {
                 //获取原图比例，将较大的值除以128，然后把较小的值去除以这个f
-                int resizedHeight = 0;
-                int resizedWidth = 0;
+                int resizedHeight;
+                int resizedWidth;
                 if (ava.getHeight() > ava.getWidth()) {
                     float f = (float) ava.getHeight() / 128;
                     resizedHeight = 128;
@@ -567,7 +564,7 @@ public class imgUtil {
                     String.valueOf(map.get(bp2.get(i))+1), "bp2Numx", "bp2Numy");
 
             draw(g, "bpWeightColor", "bpWeightFont", "bpWeightSize",
-                    new DecimalFormat("###.00").format(100*Math.pow(0.95,map.get(bp2.get(i))))+"%", "bp2Weightx", "bp2Weighty");
+                    new DecimalFormat("##0.00").format(100*Math.pow(0.95,map.get(bp2.get(i))))+"%", "bp2Weightx", "bp2Weighty");
 
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp2Modx", "bp2Mody");
@@ -637,7 +634,7 @@ public class imgUtil {
                     String.valueOf(map.get(bp3.get(i))+1), "bp3Numx", "bp3Numy");
 
             draw(g, "bpWeightColor", "bpWeightFont", "bpWeightSize",
-                    new DecimalFormat("###.00").format(100*Math.pow(0.95,map.get(bp3.get(i))))+"%", "bp3Weightx", "bp3Weighty");
+                    new DecimalFormat("##0.00").format(100*Math.pow(0.95,map.get(bp3.get(i))))+"%", "bp3Weightx", "bp3Weighty");
 
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp3Modx", "bp3Mody");
@@ -688,7 +685,7 @@ public class imgUtil {
         //把BG横向拉到1366;
         //忘记在这里处理了
         BufferedImage resizedBGTmp = new BufferedImage(resizedWeight, resizedHeight, bg.getType());
-        Graphics2D g = (Graphics2D) resizedBGTmp.createGraphics();
+        Graphics2D g = resizedBGTmp.createGraphics();
         g.drawImage(bg.getScaledInstance(resizedWeight, resizedHeight, Image.SCALE_SMOOTH), 0, 0, resizedWeight, resizedHeight, null);
         g.dispose();
 

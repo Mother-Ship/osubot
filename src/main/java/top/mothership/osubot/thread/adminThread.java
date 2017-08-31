@@ -10,13 +10,11 @@ import top.mothership.osubot.util.apiUtil;
 import top.mothership.osubot.util.dbUtil;
 import top.mothership.osubot.util.imgUtil;
 import top.mothership.osubot.util.pageUtil;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Date;
 import java.util.*;
@@ -37,13 +35,14 @@ public class adminThread extends Thread {
     private ResourceBundle rb;
     private List<String> admin;
     private boolean group = false;
-//TODO 将adminThread识别方式改成正则
+    private java.util.Date startDate;
     public adminThread(String msg,String groupName, String groupId, String fromQQ, WebSocketClient cc) {
         this.msg = msg;
         this.cc = cc;
         this.fromQQ = fromQQ;
         rb = ResourceBundle.getBundle("cabbage");
         admin = Arrays.asList(rb.getString("admin").split(","));
+        startDate = Calendar.getInstance().getTime();
         //同一个构造器初始化两种消息
         if(groupId!=null) {
             this.groupId = groupId;
@@ -57,8 +56,6 @@ public class adminThread extends Thread {
     }
 
 
-
-
     private void sendMsg(String text) {
         if (group) {
             String resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + text + "\"}";
@@ -69,22 +66,19 @@ public class adminThread extends Thread {
         }
     }
 
-    //    public void kick(String QQID){
+//    public void kick(String QQID){
 //        if(group){
 //            String resp = "{\"act\": \"121\", \"QQID\": \"" + QQID + "\", \"groupid\": \"" + groupId + "\", \"rejectaddrequest\": \"" + "false" + "\",}";
 //            cc.send(resp);
 //        }else{
 //        }
 //    }
-    public void smoke(String QQID, String duration) {
 
-    }
-
-    public void paramError(Exception e) {
+    private void paramError(Exception e) {
         logger.error("字符串处理出错");
         logger.error(e.getMessage());
         sendMsg("输入格式错误。");
-        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+        logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
     }
 
     @Override
@@ -96,14 +90,16 @@ public class adminThread extends Thread {
 //        !sudo bg <role> [图片]
         if (!admin.contains(fromQQ)) {
             sendMsg("需要管理员权限");
+            logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
             return;
+
         }
 
         if ("add".equals(msg.substring(6, 9)) || "del".equals(msg.substring(6, 9))) {
             //将所有用户名存入数组
-            String[] usernames = null;
-            String role = null;
-            int index = 0;
+            String[] usernames;
+            String role;
+            int index;
             if ("add".equals(msg.substring(6, 9))) {
                 try {
                     index = msg.indexOf(":");
@@ -127,9 +123,9 @@ public class adminThread extends Thread {
             List<String> doneList = new ArrayList<>();
             List<String> addList = new ArrayList<>();
             String img = null;
-            for (int i = 0; i < usernames.length; i++) {
-                logger.info("开始从API获取" + usernames[i] + "的信息");
-                User user = apiUtil.getUser(usernames[i],0);
+            for (String username : usernames) {
+                logger.info("开始从API获取" + username + "的信息");
+                User user = apiUtil.getUser(username, 0);
                 //如果user不是空的(官网存在记录)
                 if (user != null) {
                     //查找userRole数据库
@@ -137,15 +133,15 @@ public class adminThread extends Thread {
                         //如果userRole库中没有这个用户
                         dbUtil.addUserId(user.getUser_id());
                         Calendar c = Calendar.getInstance();
-                        if(c.get(Calendar.HOUR_OF_DAY)<4){
-                            c.add(Calendar.DAY_OF_MONTH,-1);
+                        if (c.get(Calendar.HOUR_OF_DAY) < 4) {
+                            c.add(Calendar.DAY_OF_MONTH, -1);
                         }
-                        dbUtil.addUserInfo(user,new java.sql.Date(c.getTime().getTime()));
-                        int scoreRank = pageUtil.getRank(user.getRanked_score(),1,2000);
+                        dbUtil.addUserInfo(user, new Date(c.getTime().getTime()));
+                        int scoreRank = pageUtil.getRank(user.getRanked_score(), 1, 2000);
                         logger.info("将用户" + user.getUsername() + "添加到数据库。");
                         if (usernames.length == 1) {
                             logger.info("新增单个用户，绘制名片");
-                            img = imgUtil.drawUserInfo(user, null, role, 0,false,scoreRank);
+                            img = imgUtil.drawUserInfo(user, null, role, 0, false, scoreRank);
                         }
                         addList.add(user.getUsername());
                     } else {
@@ -153,7 +149,7 @@ public class adminThread extends Thread {
                     }
                     dbUtil.editUserRole(user.getUser_id(), role);
                 } else {
-                    nullList.add(usernames[i]);
+                    nullList.add(username);
                 }
 
             }
@@ -183,7 +179,7 @@ public class adminThread extends Thread {
                 resp = resp.concat("\\n[CQ:image,file=" + img + "]");
             }
             sendMsg(resp);
-            logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
             return;
         }
 
@@ -246,7 +242,6 @@ public class adminThread extends Thread {
         }
 
         if ("bg".equals(msg.substring(6, 8))) {
-            String img;
             String param;
             BufferedImage bg;
             String URL;
@@ -281,6 +276,7 @@ public class adminThread extends Thread {
                 logger.error(e.getMessage());
                 sendMsg("根据URL下载背景图失败");
 //                sendMsg("从TX服务器获取该背景图失败。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return;
             }
             //并不需要删除旧图片
@@ -291,6 +287,7 @@ public class adminThread extends Thread {
                 logger.error("将新背景写入硬盘失败");
                 logger.error(e.getMessage());
                 sendMsg("将新背景写入硬盘失败。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return;
             }
             sendMsg("修改用户/用户组"+param+"的背景图成功。");
@@ -310,12 +307,14 @@ public class adminThread extends Thread {
             BP bp = apiUtil.getRecentScore(username,0);
             if(bp==null){
                 sendMsg("玩家"+user.getUsername()+"最近没有游戏记录。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return;
             }
             Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
             String filename = imgUtil.drawOneBP(user, bp, map);
             if (filename.equals("error")) {
                 sendMsg("绘图过程中发生致命错误。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return;
             }
             sendMsg("[CQ:image,file=" + filename + "]");
@@ -356,9 +355,9 @@ public class adminThread extends Thread {
             List<Integer> list = dbUtil.listUserInfoByRole(role);
             List<String> afkList = new ArrayList<>();
             logger.info("开始查询"+role+"用户组中"+day+"天前的AFK玩家");
-            for(int i=0;i<list.size();i++){
-                if(pageUtil.getLastActive(list.get(i)).before(date)){
-                    afkList.add(apiUtil.getUser(null,list.get(i)).getUsername());
+            for (Integer aList : list) {
+                if (pageUtil.getLastActive(aList).before(date)) {
+                    afkList.add(apiUtil.getUser(null, aList).getUsername());
                 }
             }
             resp = "查询"+role+"用户组中"+day+"天前的AFK玩家完成。";
@@ -369,10 +368,11 @@ public class adminThread extends Thread {
             }
             sendMsg(resp);
         }
+
         if ("smoke".equals(msg.substring(6, 11))) {
             String QQ;
-            int index = 0;
-            int sec = 0;
+            int index;
+            int sec;
             try {
                 index = msg.indexOf(":");
                 if(index == -1){
@@ -393,7 +393,7 @@ public class adminThread extends Thread {
         }
 
 
-        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+        logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
 
     }
     private void delete(String filename) {

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft;
 import org.java_websocket.drafts.Draft_17;
+import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
 import top.mothership.osubot.thread.adminThread;
 import top.mothership.osubot.thread.entryJob;
@@ -37,7 +38,7 @@ public class App {
     private static int end = 0;
     private static int len = 0;
     private static List<String> qunAdmin = Arrays.asList("2643555740", "290514894", "2307282906", "2055805091", "735862173",
-                                                "1142592265", "263202941", "992931505","1335734657","526942417","1012621328");
+            "1142592265", "263202941", "992931505", "1335734657", "526942417", "1012621328");
     /*
     业务逻辑:监听群消息，当检测到!stat开头的消息时，分割出后面的用户名，开新线程请求屙屎的api
 
@@ -70,7 +71,7 @@ public class App {
 
         try {
             //实现了抽象类就得实现抽象方法，websocket有四个抽象方法：连接，断连，收到消息和出错
-            cc = new WebSocketClient(new URI("ws://localhost:25303"), (Draft) new Draft_17()) {
+            cc = new WebSocketClient(new URI("ws://localhost:25303"), new Draft_6455()) {
                 public void onOpen(ServerHandshake serverHandshake) {
                     logger.info("连接成功，地址为" + getURI());
                 }
@@ -78,7 +79,6 @@ public class App {
                 public void onMessage(String message) {
                     try {
 
-                        //
                         JSON json = JSON.parse(message);
                         //原作者使用了String.format，我尝试使用.getString方法。其实我没用过这个json解析器……
                         //新增一个入口，检测是否是管理员消息
@@ -86,7 +86,6 @@ public class App {
                         // 现有逻辑：如果是群消息，识别是否是管理员专用的消息，如果是就交给adminThread，其他消息交给playerThread
 
                         //群消息和私聊消息合并
-
                         if (json.get("act").getString().trim().equals("2") || json.get("act").getString().trim().equals("21")) {
                             String msg = json.get("msg").getString();
                             //对msg进行反转义
@@ -94,7 +93,7 @@ public class App {
                             msg = msg.replaceAll("&#93;", "]");
                             String groupId = null;
                             String groupName = null;
-                            String fromQQ = null;
+                            String fromQQ;
                             if (json.get("fromGroup") != null) {
                                 groupId = json.get("fromGroup").getString();
                                 groupName = json.get("fromGroupName").getString();
@@ -103,7 +102,7 @@ public class App {
                                 fromQQ = json.get("fromQQ").getString();
                             }
                             //对msg进行识别
-                            if(json.get("act").getString().trim().equals("21")){
+                            if (json.get("act").getString().trim().equals("21")) {
                                 //私聊消息识别汉字
                                 mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)(.*+)";
                             }
@@ -111,8 +110,6 @@ public class App {
                                 Matcher m = Pattern.compile(mainRegex).matcher(msg);
                                 m.find();
                                 //如果消息匹配正则表达式
-
-
                                 if (m.group(1).equals("sudo")) {
                                     adminThread at = new adminThread(msg, groupName, groupId, fromQQ, cc);
                                     at.start();
@@ -121,99 +118,13 @@ public class App {
                                     playerThread pt = new playerThread(msg, groupName, groupId, fromQQ, cc);
                                     pt.start();
                                 }
-
                             } else {
-                                //如果不是感叹号开头的消息，进入禁言识别
-
-                                //如果是群消息
+                                //如果不是白菜的命令，而且是群消息，进入禁言识别
                                 if (json.get("act").getString().trim().equals("2")) {
-                                    int count = 0;
-                                    //如果消息带图片就刮掉
-                                    Matcher m = Pattern.compile(imgRegex).matcher(msg);
-                                    if (m.find()) {
-                                        msg = m.group(2);
-                                        if (msg.equals("")) {
-                                            msg = msg.concat("Image");
-                                        }
-                                    }
-                                    //刮掉除了中文英文数字之外的东西
-                                    msg = msg.replaceAll("[^\\u4e00-\\u9fa5a-zA-Z0-9]", "");
-                                    //循环数组
-                                    if (groupId.equals("201872650")||groupId.equals("564679329")) {
-                                        len++;
-                                        if (len >= 200) {
-                                            len = 200;
-                                            start++;
-                                        }
-                                        if (end == 200) {
-                                            end = 0;
-                                        }
-                                        if (start == 200) {
-                                            start = 0;
-                                        }
-                                        //把群号拼在字符串上
-                                        msgs[end] = groupId+msg;
-                                        end++;
-
-                                        if (start < end) {
-                                            //复读不抓三个字以下的和纯图片
-                                            for (int i = 0; i < end; i++) {
-                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
-                                                    count++;
-                                                }
-                                            }
-                                        } else {
-                                            for (int i = 0; i < start - 1; i++) {
-                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
-                                                    count++;
-                                                }
-                                            }
-                                            for (int i = end; i < msgs.length; i++) {
-                                                if ((groupId+msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
-                                                    count++;
-                                                }
-                                            }
-                                        }
-
-                                    }
-
-                                    if (count >= 6) {
-                                        String resp;
-                                        if (qunAdmin.contains(fromQQ)) {
-                                            logger.info("检测到群管" + fromQQ + "的复读");
-                                            resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 检测到群管" + "[CQ:at,qq=" + fromQQ + "] 复读。" + "\"}";
-
-                                        } else {
-                                            logger.info("正在尝试禁言" + fromQQ);
-                                            resp = "{\"act\": \"121\", \"QQID\": \"" + fromQQ + "\", \"groupid\": \"" + groupId + "\", \"duration\":\"" + 600 + "\"}";
-                                        }
-                                        cc.send(resp);
-                                    }
-
+                                    checkSmoke(msg, groupId, fromQQ);
                                 }
-                                /*
-                                一点小笔记：这里如果采用ArrayList：
-                                比对消息：遍历数组x次(x<50)
-                                插入消息：System.arraycopy(elementData, index, elementData, index + 1,size - index);
-
-                                如果采用LinkedList：
-                                比对消息：遍历半个数组，25*x次
-                                插入消息：直接在链表最后加上数据
-
-                                而如果采用循环的Array：
-                                比对只需要对数组进行遍历，遍历x次
-                                插入消息：直接指定Array的第x个数
-
-                                HashMap：(HashSet实际上是value固定的HashMap,但是无序、不能重复、只有迭代器才能查找)
-                                计算所有value的HashCode，如果遇到重复的，就原地创建一个LinkedList,把key关联它，把后来的value放在后面，这样最大限度的保证了根据key查找value的效率
-                                */
-
                             }
-
-
                         }
-
-
                         if (json.get("act").getString().trim().equals("103")) {
                             //群成员增加……
                             //对msg进行识别
@@ -252,5 +163,87 @@ public class App {
         }
     }
 
+
+    private static void checkSmoke(String msg, String groupId, String fromQQ) {
+/*
+    一点小笔记：这里如果采用ArrayList：
+    比对消息：遍历数组x次(x<50)
+    插入消息：System.arraycopy(elementData, index, elementData, index + 1,size - index);
+
+    如果采用LinkedList：
+    比对消息：遍历半个数组，25*x次
+    插入消息：直接在链表最后加上数据
+
+    而如果采用循环的Array：
+    比对只需要对数组进行遍历，遍历x次
+    插入消息：直接指定Array的第x个数
+
+    HashMap：(HashSet实际上是value固定的HashMap,但是无序、不能重复、只有迭代器才能查找)
+    计算所有value的HashCode，如果遇到重复的，就原地创建一个LinkedList,把key关联它，把后来的value放在后面，这样最大限度的保证了根据key查找value的效率
+*/
+        int count = 0;
+        //如果消息带图片就刮掉
+        Matcher m = Pattern.compile(imgRegex).matcher(msg);
+        if (m.find()) {
+            msg = m.group(2);
+            if (msg.equals("")) {
+                msg = msg.concat("Image");
+            }
+        }
+        //刮掉除了中文英文数字之外的东西
+        msg = msg.replaceAll("[^\\u4e00-\\u9fa5a-zA-Z0-9]", "");
+        //循环数组
+        if (groupId.equals("201872650") || groupId.equals("564679329")) {
+            len++;
+            if (len >= 200) {
+                len = 200;
+                start++;
+            }
+            if (end == 200) {
+                end = 0;
+            }
+            if (start == 200) {
+                start = 0;
+            }
+            //把群号拼在字符串上
+            msgs[end] = groupId + msg;
+            end++;
+
+            if (start < end) {
+                //复读不抓三个字以下的和纯图片
+                for (int i = 0; i < end; i++) {
+                    if ((groupId + msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
+                        count++;
+                    }
+                }
+            } else {
+                for (int i = 0; i < start - 1; i++) {
+                    if ((groupId + msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
+                        count++;
+                    }
+                }
+                for (int i = end; i < msgs.length; i++) {
+                    if ((groupId + msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
+                        count++;
+                    }
+                }
+            }
+
+        }
+        if (count >= 6) {
+            String resp;
+            if (qunAdmin.contains(fromQQ)) {
+                logger.info("检测到群管" + fromQQ + "的复读");
+                resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 检测到群管" + "[CQ:at,qq=" + fromQQ + "] 复读。" + "\"}";
+
+            } else {
+                logger.info("正在尝试禁言" + fromQQ);
+                resp = "{\"act\": \"121\", \"QQID\": \"" + fromQQ + "\", \"groupid\": \"" + groupId + "\", \"duration\":\"" + 600 + "\"}";
+            }
+            cc.send(resp);
+        }
+
+
+    }
 
 }

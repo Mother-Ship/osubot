@@ -12,6 +12,7 @@ import top.mothership.osubot.util.imgUtil;
 import top.mothership.osubot.util.pageUtil;
 
 import java.io.File;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -35,7 +36,7 @@ public class playerThread extends Thread {
     private ResourceBundle rb;
     private Matcher m;
     private boolean group = false;
-
+    private Date startDate;
     public playerThread(String msg, String groupName, String groupId, String fromQQ, WebSocketClient cc) {
         this.msg = msg;
         this.fromQQ = fromQQ;
@@ -43,6 +44,7 @@ public class playerThread extends Thread {
         rb = ResourceBundle.getBundle("cabbage");
         if (groupId != null) {
             this.groupId = groupId;
+            startDate = Calendar.getInstance().getTime();
             group = true;
             logger.info("检测到来自群：" + groupName + "的【" + fromQQ + "】的操作群消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
@@ -103,8 +105,7 @@ public class playerThread extends Thread {
 
         if (m.group(1).equals("bp")) {
             int num = 0;
-            String username = null;
-            String filename = null;
+            String username;
             if (msg.matches(mainRegexWithNum)) {
                 m = Pattern.compile(mainRegexWithNum).matcher(msg);
                 m.find();
@@ -136,6 +137,15 @@ public class playerThread extends Thread {
         if (m.group(1).equals("setid")) {
             String username = m.group(2).substring(1);
             logger.info("尝试将" + username + "绑定到" + fromQQ + "上");
+            if ("白菜".equals(username)) {
+                if(fromQQ.equals("1335734657")) {
+                    sendMsg("将" + username + "绑定到" + fromQQ + "成功");
+                }else{
+                    sendMsg("这个osu账号已经绑定了" + 1335734657 + "，如果发生错误请联系妈妈船。");
+                }
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+                return;
+            }
             User user = apiUtil.getUser(username, 0);
             if(user==null){
                 sendMsg("没有在官网找到该玩家。");
@@ -228,7 +238,8 @@ public class playerThread extends Thread {
             delete(filename);
 
         }
-        logger.info("线程" + this.getName() + "处理完毕，已经退出");
+        logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+
     }
 
 
@@ -238,7 +249,7 @@ public class playerThread extends Thread {
             if (num < 0 || num > 100) {
                 sendMsg("其他人看不到的东西，白菜也看不到啦。");
                 logger.info("BP不能大于100或者小于0");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return false;
             } else {
                 return true;
@@ -246,7 +257,7 @@ public class playerThread extends Thread {
         } catch (java.lang.NumberFormatException e) {
             sendMsg("Ай-ай-ай-ай-ай, что сейчас произошло!");
             logger.info("给的BP数目不是int");
-            logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
             return false;
         }
     }
@@ -258,20 +269,20 @@ public class playerThread extends Thread {
             if (day > (int) ((new java.util.Date().getTime() - new SimpleDateFormat("yyyy-MM-dd").parse("2007-09-16").getTime()) / 1000 / 60 / 60 / 24)) {
                 sendMsg("你要找史前时代的数据吗。");
                 logger.info("指定的日期早于osu!首次发布日期");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return false;
             }
             if (day < 0) {
                 sendMsg("白菜不会预知未来。");
                 logger.info("天数不能为负值");
-                logger.info("线程" + this.getName() + "处理完毕，已经退出");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return false;
             }
 
         } catch (java.lang.NumberFormatException e) {
             sendMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
             logger.info("给的天数不是int值");
-            logger.info("线程" + this.getName() + "处理完毕，已经退出");
+            logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
             return false;
         } catch (ParseException e) {
             //由于解析的是固定字符串，不会出异常，无视
@@ -325,21 +336,6 @@ public class playerThread extends Thread {
             }
             sendMsg("[CQ:image,file=" + filename + "]");
         } else {
-            //nearest
-
-//                    logger.info("正在对"+user.getUsername()+"的BP进行排序……");
-//                    //对list中的bp按日期排序
-//                    BP temp = null;
-//                    int size = list.size();
-//                    for (int i = 0; i < size - 1; i++) {
-//                        for (int j = 0; j < size - 1 - i; j++) {   //如果j比j+1晚
-//                            if (list.get(j).getDate().before(list.get(j + 1).getDate())) {   //把j+1给j 把j给j+1
-//                                temp = list.get(j);
-//                                list.set(j, list.get(j + 1));
-//                                list.set(j + 1, temp);
-//                            }
-//                        }
-//                    }
             if (num > list.size()) {
                 sendMsg("该玩家没有打出指定的bp……");
                 logger.info("请求的bp数比玩家bp总数量大");
@@ -383,7 +379,7 @@ public class playerThread extends Thread {
         }
 
         String role = dbUtil.getUserRole(userFromAPI.getUser_id());
-        int scoreRank=0;
+        int scoreRank;
         if(userFromAPI.getUser_id()==1244312
                 ||userFromAPI.getUser_id()==6149313
                 ||userFromAPI.getUser_id()==3213720){
@@ -395,6 +391,7 @@ public class playerThread extends Thread {
         if (filename.equals("error")) {
             sendMsg("绘图过程中发生致命错误。");
         }
+        logger.info("绘制完成，正在发送……");
         //由于带[]的玩家，生成的文件名会导致返回出错，直接在imgUtil改为用数字id生成文件
         sendMsg("[CQ:image,file=" + filename + "]");
         try {
@@ -403,6 +400,7 @@ public class playerThread extends Thread {
             e.printStackTrace();
         }
         //删掉生成的文件
+        logger.info("发送完成，正在删除……");
         delete(filename);
     }
 

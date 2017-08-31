@@ -11,52 +11,40 @@
     <url>http://maven.apache.org</url>
     <build>
         <plugins>
-        <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>2.4</version>
-            <configuration>
-                <descriptorRefs>
-                    <descriptorRef>jar-with-dependencies</descriptorRef>
-                </descriptorRefs>
-                <archive>
-                    <manifest>
-                        <mainClass>top.mothership.osubot.App</mainClass>
-                    </manifest>
-                </archive>
-            </configuration>
-            <executions>
-                <execution>
-                    <id>make-assembly</id>
-                    <phase>package</phase>
-                    <goals>
-                        <goal>single</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <mainClass>top.mothership.osubot.App</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
-        <!--<resources>-->
-            <!--<resource>-->
-                <!--&lt;!&ndash; 要打包的文件所在的目录 &ndash;&gt;-->
-                <!--<directory>src/main/resources</directory>-->
-                <!--&lt;!&ndash; includes 和 excludes 都可以独立配置，也可以同时配置 &ndash;&gt;-->
-
-                <!--&lt;!&ndash; 指定要打包的文件 &ndash;&gt;-->
-                <!--&lt;!&ndash;-->
-                <!--<includes>-->
-                    <!--<include>**/*.*</include>-->
-                <!--</includes>-->
-                <!--&ndash;&gt;-->
-
-                <!--&lt;!&ndash; 或者也可以剔除不需要打包的文件 &ndash;&gt;-->
-                <!--&lt;!&ndash;<excludes>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<exclude>**/*.jsp</exclude>&ndash;&gt;-->
-                <!--&lt;!&ndash;</excludes>&ndash;&gt;-->
-
-                <!--&lt;!&ndash; 指定打包到目的文件夹 &ndash;&gt;-->
-                <!--<targetPath>resources</targetPath>-->
-            <!--</resource>-->
-        <!--</resources>-->
     </build>
 
     <properties>
@@ -73,36 +61,41 @@
             <version>3.8.1</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+        <!--1）网页抓取  https://mvnrepository.com/artifact/org.jsoup/jsoup -->
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.10.3</version>
         </dependency>
 
-
-        <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+        <!--2）JSON解析 https://mvnrepository.com/artifact/com.google.code.gson/gson -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.8.1</version>
         </dependency>
-
         <dependency>
             <groupId>cc.plural</groupId>
             <artifactId>jsonij</artifactId>
             <version>0.3.1</version>
         </dependency>
+        <!--3）项目核心-WebSocket-->
         <dependency>
             <groupId>org.java-websocket</groupId>
             <artifactId>Java-WebSocket</artifactId>
             <version>RELEASE</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+        <!--4）日志 https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.8.2</version>
+        </dependency>
+        <!--5）数据库操作 https://mvnrepository.com/artifact/org.mybatis/mybatis -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.4.5</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
         <dependency>
@@ -110,11 +103,12 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.43</version>
         </dependency>
-        <!--cmyk转换器-->
+        <!--6）cmyk转换器-->
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-jpeg</artifactId>
             <version>3.3.2</version>
         </dependency>
+
     </dependencies>
 </project>
