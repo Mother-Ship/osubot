@@ -28,7 +28,7 @@ public class dbUtil {
         return DriverManager.getConnection(rb.getString("jdbcURL"), rb.getString("jdbcUser"),
                 rb.getString("jdbcPwd"));
     }
-
+    //TODO 改造数据库工具，把SQL当做参数传入某个方法
     //客串查询userid有没有被存入过
     public String getUserRole(int userId) {
         String querySql = "SELECT `role` FROM `userrole` WHERE `user_id` = ?";

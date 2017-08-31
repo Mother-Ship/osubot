@@ -51,15 +51,15 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         String output = null;
         int retry = 0;
-        while (retry < 5) {
+        while (retry < 8) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(URL).openConnection();
                 httpConnection.setRequestMethod("GET");
                 httpConnection.setRequestProperty("Accept", "application/json");
 
-                httpConnection.setConnectTimeout(2000);
-                httpConnection.setReadTimeout(2000);
+                httpConnection.setConnectTimeout((int)Math.pow(2,retry)*1000);
+                httpConnection.setReadTimeout((int)Math.pow(2,retry)*1000);
                 if (httpConnection.getResponseCode() != 200) {
                     logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
@@ -79,7 +79,7 @@ public class apiUtil {
             }
 
         }
-        if (retry == 5) {
+        if (retry == 8) {
             logger.error("玩家" + userId + "请求API获取数据，失败五次");
             return null;
         }
@@ -103,15 +103,15 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         List<BP> list = null;
         int retry = 0;
-        while (retry < 5) {
+        while (retry < 8) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(URL).openConnection();
                 //设置请求头
                 httpConnection.setRequestMethod("GET");
                 httpConnection.setRequestProperty("Accept", "application/json");
-                httpConnection.setConnectTimeout(2000);
-                httpConnection.setReadTimeout(2000);
+                httpConnection.setConnectTimeout((int)Math.pow(2,retry)*1000);
+                httpConnection.setReadTimeout((int)Math.pow(2,retry)*1000);
                 if (httpConnection.getResponseCode() != 200) {
                     logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
@@ -140,7 +140,7 @@ public class apiUtil {
                 retry++;
             }
         }
-        if (retry == 5) {
+        if (retry == 8) {
             logger.error("玩家" + username + "请求API获取BP，失败五次");
             return null;
         }
@@ -155,15 +155,15 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         String output = null;
         int retry = 0;
-        while (retry < 5) {
+        while (retry < 8) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(getMapURL + "?k=" + key + "&b=" + bid).openConnection();
                 //设置请求头
                 httpConnection.setRequestMethod("GET");
                 httpConnection.setRequestProperty("Accept", "application/json");
-                httpConnection.setConnectTimeout(1000);
-                httpConnection.setReadTimeout(1000);
+                httpConnection.setConnectTimeout((int)Math.pow(2,retry)*1000);
+                httpConnection.setReadTimeout((int)Math.pow(2,retry)*1000);
                 //如果ppy的泡面撒了
                 if (httpConnection.getResponseCode() != 200) {
                     logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
@@ -185,7 +185,7 @@ public class apiUtil {
                 retry++;
             }
         }
-        if (retry == 5) {
+        if (retry == 8) {
             logger.error("谱面" + bid + "的名称获取失败");
             return null;
         }
@@ -210,15 +210,15 @@ public class apiUtil {
         HttpURLConnection httpConnection = null;
         List<BP> list = null;
         int retry = 0;
-        while (retry < 5) {
+        while (retry < 8) {
             try {
                 httpConnection =
                         (HttpURLConnection) new URL(URL).openConnection();
                 //设置请求头
                 httpConnection.setRequestMethod("GET");
                 httpConnection.setRequestProperty("Accept", "application/json");
-                httpConnection.setConnectTimeout(2000);
-                httpConnection.setReadTimeout(2000);
+                httpConnection.setConnectTimeout((int)Math.pow(2,retry)*1000);
+                httpConnection.setReadTimeout((int)Math.pow(2,retry)*1000);
                 if (httpConnection.getResponseCode() != 200) {
                     logger.info("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
                     retry++;
@@ -240,7 +240,7 @@ public class apiUtil {
                 retry++;
             }
         }
-        if (retry == 5) {
+        if (retry == 8) {
             logger.error("玩家" + username + "请求API获取最近游戏记录，失败五次");
             return null;
         }

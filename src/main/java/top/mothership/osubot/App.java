@@ -103,6 +103,10 @@ public class App {
                                 fromQQ = json.get("fromQQ").getString();
                             }
                             //对msg进行识别
+                            if(json.get("act").getString().trim().equals("21")){
+                                //私聊消息识别汉字
+                                mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)(.*+)";
+                            }
                             if (msg.matches(mainRegex)) {
                                 Matcher m = Pattern.compile(mainRegex).matcher(msg);
                                 m.find();

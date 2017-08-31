@@ -457,7 +457,7 @@ public class imgUtil {
         return drawImage(bg, userFromAPI);
     }
 
-    public String drawUserBP(User user, List<BP> list) {
+    public String drawUserBP(User user, java.util.Map<BP,Integer> map) {
         //思路：获取list的大小，把每个list成员的.getbeatmapName信息绘制到图片上
         logger.info("开始绘制" + user.getUsername() + "的今日BP信息");
         BufferedImage bpTop;
@@ -472,7 +472,7 @@ public class imgUtil {
         int bpMid3Height = 0;
         try {
             bpTop = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("bptop")));
-            for (BP aList : list) {
+            for (BP aList : map.keySet()) {
                 //准备好和BP数量相同的List
                 if (aList.getBeatmap_name().length() < Integer.valueOf(rb.getString("bplimit"))) {
                     //根据谱面名称+难度的长度读取BG
@@ -562,6 +562,13 @@ public class imgUtil {
             //绘制日期(给的就是北京时间，不转)
             draw(g, "bpDateColor", "bpDateFont", "bpDateSize",
                     new SimpleDateFormat("MM-dd HH:mm").format(bp2.get(i).getDate().getTime()), "bp2Datex", "bp2Datey");
+            //绘制Num和Weight
+            draw(g, "bpNumColor", "bpNumFont", "bpNumSize",
+                    String.valueOf(map.get(bp2.get(i))+1), "bp2Numx", "bp2Numy");
+
+            draw(g, "bpWeightColor", "bpWeightFont", "bpWeightSize",
+                    new DecimalFormat("###.00").format(100*Math.pow(0.95,map.get(bp2.get(i))))+"%", "bp2Weightx", "bp2Weighty");
+
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp2Modx", "bp2Mody");
             //绘制PP
@@ -625,6 +632,13 @@ public class imgUtil {
             //绘制日期(给的就是北京时间，不转)
             draw(g, "bpDateColor", "bpDateFont", "bpDateSize",
                     new SimpleDateFormat("MM-dd HH:mm").format(bp3.get(i).getDate().getTime()), "bp3Datex", "bp3Datey");
+            //绘制Num和Weight
+            draw(g, "bpNumColor", "bpNumFont", "bpNumSize",
+                    String.valueOf(map.get(bp3.get(i))+1), "bp3Numx", "bp3Numy");
+
+            draw(g, "bpWeightColor", "bpWeightFont", "bpWeightSize",
+                    new DecimalFormat("###.00").format(100*Math.pow(0.95,map.get(bp3.get(i))))+"%", "bp3Weightx", "bp3Weighty");
+
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp3Modx", "bp3Mody");
             //绘制PP

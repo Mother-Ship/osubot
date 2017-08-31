@@ -14,10 +14,7 @@ import top.mothership.osubot.util.pageUtil;
 import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -297,12 +294,13 @@ public class playerThread extends Thread {
         c.set(Calendar.HOUR_OF_DAY, 4);
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
-        List<BP> result = new ArrayList<>();
+        //需要同时传递BP的位置和本体
+        java.util.Map<BP,Integer> result = new HashMap<>();
 
-        for (BP aList : list) {
+        for (int i=0;i<list.size();i++) {
             //对BP进行遍历，如果产生时间晚于当天凌晨4点
-            if (aList.getDate().after(c.getTime())) {
-                result.add(aList);
+            if (list.get(i).getDate().after(c.getTime())) {
+                result.put(list.get(i),i);
             }
         }
 
@@ -314,7 +312,7 @@ public class playerThread extends Thread {
                 return;
             }
 
-            for (BP aList : result) {
+            for (BP aList : result.keySet()) {
                 //对BP进行遍历，请求API将名称写入
                 logger.info("正在获取Beatmap id为" + aList.getBeatmap_id() + "的谱面的名称");
                 Map map = apiUtil.getMapDetail(aList.getBeatmap_id());
@@ -386,8 +384,10 @@ public class playerThread extends Thread {
 
         String role = dbUtil.getUserRole(userFromAPI.getUser_id());
         int scoreRank=0;
-        if(userFromAPI.getUser_id()==1244312){
-            scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 6082);
+        if(userFromAPI.getUser_id()==1244312
+                ||userFromAPI.getUser_id()==6149313
+                ||userFromAPI.getUser_id()==3213720){
+            scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 10000);
         }else {
             scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 2000);
         }
