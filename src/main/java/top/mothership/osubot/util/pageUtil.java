@@ -8,7 +8,7 @@ import org.jsoup.select.Elements;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.ParseException;
@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 /**
  * Created by QHS on 2017/8/18.
@@ -26,7 +27,10 @@ public class pageUtil {
     private final String getUserURL = "https://osu.ppy.sh/u/";
     private final String getUserProfileURL = "https://osu.ppy.sh/pages/include/profile-general.php?u=";
     private final String getBGURL = "http://bloodcat.com/osu/i/";
+    private final String getOsuURL = "https://osu.ppy.sh/osu/";
     private HashMap<Integer,Document> map = new HashMap();
+    private static ResourceBundle rb = ResourceBundle.getBundle("cabbage");
+    private apiUtil apiUtil = new apiUtil();
     //后续在这个类里解析dom树获取网页内容
     //将异常抛出给调用者
     public BufferedImage getAvatar(int uid) throws IOException {
@@ -192,6 +196,60 @@ public class pageUtil {
             logger.error("将时间转换为Date对象出错");
         }
         return null;
+    }
+
+    public String getOsuFile(int bid,top.mothership.osubot.pojo.Map map){
+        HttpURLConnection httpConnection = null;
+        int retry = 0;
+        File osu = new File(rb.getString("path") + "\\data\\image\\resource\\osu\\"+bid+".osu");
+
+        if(osu.length()>0&&(map.getApproved()==1||map.getApproved()==2)){
+            //如果osu文件大小大于0，并且状态是ranked
+            return bid+".osu";
+        }
+        while (retry < 8) {
+            try(
+                    FileOutputStream fs = new FileOutputStream(osu)
+            ) {
+
+                httpConnection =
+                        (HttpURLConnection) new URL(getOsuURL + bid).openConnection();
+                httpConnection.setRequestMethod("GET");
+                httpConnection.setConnectTimeout((int)Math.pow(2,retry)*1000);
+                httpConnection.setReadTimeout((int)Math.pow(2,retry)*1000);
+                if (httpConnection.getResponseCode() != 200) {
+                    logger.error("HTTP GET请求失败: " + httpConnection.getResponseCode() + "，正在重试第" + (retry + 1) + "次");
+                    retry++;
+                    continue;
+                }
+                //读取返回结果
+                fs.write(readInputStream(httpConnection.getInputStream()));
+                //手动关闭流
+                httpConnection.disconnect();
+                break;
+            } catch (IOException e) {
+                logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
+                retry++;
+            }
+
+        }
+        if (retry == 8) {
+            logger.error("获取" + bid + "的背景图，失败五次");
+            return null;
+        }
+        return bid+".osu";
+    }
+
+
+    private byte[] readInputStream(InputStream inputStream) throws IOException {
+        byte[] buffer = new byte[1024];
+        int len = 0;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        while((len = inputStream.read(buffer)) != -1) {
+            bos.write(buffer, 0, len);
+        }
+        bos.close();
+        return bos.toByteArray();
     }
 
 }

@@ -1,5 +1,7 @@
 package top.mothership.osubot.util;
 
+import cc.plural.jsonij.JSON;
+import cc.plural.jsonij.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import top.mothership.osubot.pojo.BP;
@@ -9,8 +11,10 @@ import top.mothership.osubot.pojo.User;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +27,8 @@ import java.util.List;
 
 public class imgUtil {
     //不用this，直接指明类就可以了
+    private String cmd = "\"" + rb.getString("path") + "\\data\\image\\resource\\oppai.exe\" "
+            + "\"" + rb.getString("path") + "\\data\\image\\resource\\osu\\";
     private static Logger logger = LogManager.getLogger("imgUtil.class");
     private static ResourceBundle rb = ResourceBundle.getBundle("cabbage");
     private static List<BufferedImage> Images;
@@ -36,7 +42,8 @@ public class imgUtil {
     private static BufferedImage XH;
     private static BufferedImage S;
     private static BufferedImage SH;
-
+    private static BufferedImage zPP;
+    private static BufferedImage layout;
     static {
         final Path resultPath = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
         //使用NIO扫描文件夹
@@ -64,7 +71,7 @@ public class imgUtil {
             for (int i = 37; i < 48; i++) {
                 Mods.add(ImageIO.read(resultFiles.get(i)));
             }
-
+            zPP = ImageIO.read(resultFiles.get(48));
         } catch (IOException e) {
             logger.error("读取result相关资源失败");
             logger.error(e.getMessage());
@@ -116,7 +123,7 @@ public class imgUtil {
         }
     }
 
-    private List<String> convertMOD(Integer bp) {
+    public List<String> convertMOD(Integer bp) {
         String modBin = Integer.toBinaryString(bp);
         //反转mod
         modBin = new StringBuffer(modBin).reverse().toString();
@@ -172,15 +179,15 @@ public class imgUtil {
         return mods;
     }
 
-    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near,int scoreRank) {
+    public String drawUserInfo(User userFromAPI, User userInDB, String role, int day, boolean near, int scoreRank) {
 
         //准备资源：背景图和用户头像，以及重画之后的用户头像
         BufferedImage ava = null;
         BufferedImage bg;
+        BufferedImage layout = null;
         BufferedImage resizedAva;
         BufferedImage scoreRankBG = null;
         try {
-            scoreRankBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("scoreRankBG")));
             bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + userFromAPI.getUser_id() + ".png"));
         } catch (IOException e) {
             //所有没有独立bg的都采用默认bg
@@ -189,6 +196,8 @@ public class imgUtil {
                 bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
             } catch (IOException e1) {
                 try {
+                    layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("layout")));
+                    scoreRankBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("scoreRankBG")));
                     bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("defaultbg")));
                 } catch (IOException e2) {
                     logger.error("读取stat的本地资源失败");
@@ -241,8 +250,13 @@ public class imgUtil {
             //先把头像画上去
             g2.drawImage(resizedAva, Integer.decode(rb.getString("avax")), Integer.decode(rb.getString("avay")), null);
         }
-        //绘制文字
 
+
+        //绘制布局
+        g2.drawImage(layout, 0,0, null);
+
+
+        //绘制文字
         //开启平滑
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -259,10 +273,10 @@ public class imgUtil {
         if (scoreRank > 0) {
             //把scorerank用到的bg画到bg上
             g2.drawImage(scoreRankBG, 653, 7, null);
-            if(scoreRank<100){
-                draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", "#"+Integer.toString(scoreRank), "scoreRank2x", "scoreRank2y");
-            }else {
-                draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", "#"+Integer.toString(scoreRank), "scoreRankx", "scoreRanky");
+            if (scoreRank < 100) {
+                draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", "#" + Integer.toString(scoreRank), "scoreRank2x", "scoreRank2y");
+            } else {
+                draw(g2, "scoreRankColor", "scoreRankFont", "scoreRankSize", "#" + Integer.toString(scoreRank), "scoreRankx", "scoreRanky");
             }
         }
 
@@ -454,7 +468,7 @@ public class imgUtil {
         return drawImage(bg, userFromAPI);
     }
 
-    public String drawUserBP(User user, java.util.Map<BP,Integer> map) {
+    public String drawUserBP(User user, java.util.Map<BP, Integer> map) {
         //思路：获取list的大小，把每个list成员的.getbeatmapName信息绘制到图片上
         logger.info("开始绘制" + user.getUsername() + "的今日BP信息");
         BufferedImage bpTop;
@@ -561,10 +575,10 @@ public class imgUtil {
                     new SimpleDateFormat("MM-dd HH:mm").format(bp2.get(i).getDate().getTime()), "bp2Datex", "bp2Datey");
             //绘制Num和Weight
             draw(g, "bpNumColor", "bpNumFont", "bpNumSize",
-                    String.valueOf(map.get(bp2.get(i))+1), "bp2Numx", "bp2Numy");
+                    String.valueOf(map.get(bp2.get(i)) + 1), "bp2Numx", "bp2Numy");
 
             draw(g, "bpWeightColor", "bpWeightFont", "bpWeightSize",
-                    new DecimalFormat("##0.00").format(100*Math.pow(0.95,map.get(bp2.get(i))))+"%", "bp2Weightx", "bp2Weighty");
+                    new DecimalFormat("##0.00").format(100 * Math.pow(0.95, map.get(bp2.get(i)))) + "%", "bp2Weightx", "bp2Weighty");
 
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp2Modx", "bp2Mody");
@@ -631,10 +645,10 @@ public class imgUtil {
                     new SimpleDateFormat("MM-dd HH:mm").format(bp3.get(i).getDate().getTime()), "bp3Datex", "bp3Datey");
             //绘制Num和Weight
             draw(g, "bpNumColor", "bpNumFont", "bpNumSize",
-                    String.valueOf(map.get(bp3.get(i))+1), "bp3Numx", "bp3Numy");
+                    String.valueOf(map.get(bp3.get(i)) + 1), "bp3Numx", "bp3Numy");
 
             draw(g, "bpWeightColor", "bpWeightFont", "bpWeightSize",
-                    new DecimalFormat("##0.00").format(100*Math.pow(0.95,map.get(bp3.get(i))))+"%", "bp3Weightx", "bp3Weighty");
+                    new DecimalFormat("##0.00").format(100 * Math.pow(0.95, map.get(bp3.get(i)))) + "%", "bp3Weightx", "bp3Weighty");
 
             //绘制MOD
             draw(g, "bpModColor", "bpModFont", "bpModSize", mods, "bp3Modx", "bp3Mody");
@@ -666,8 +680,40 @@ public class imgUtil {
             return "error";
         }
 
-        logger.info("歌曲BG加载完成，开始绘制");
-
+        logger.info("歌曲BG加载完成");
+        List<String> mods = convertMOD(bp.getEnabled_mods());
+        String osuFile = pageUtil.getOsuFile(bp.getBeatmap_id(), map);
+        BufferedReader bufferedReader;
+        int PP;
+        int aimPP;
+        int speedPP;
+        int accPP;
+        try {
+            cmd = cmd + osuFile + "\" -ojson ";
+            if (mods.size() > 0) {
+                cmd = cmd.concat("+" + mods.toString().replaceAll("[\\[\\] ,]", "") + " ");
+            }
+            cmd = cmd + bp.getCount100() + "x100 " + bp.getCount50() + "x50 "
+                    + bp.getCountmiss() + "m " + bp.getMaxcombo() + "x";
+            Process process = Runtime.getRuntime().exec(cmd);
+//            logger.debug(cmd);
+            process.waitFor();
+            bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()), 1024);
+            String line = bufferedReader.readLine();
+            JSON json = JSON.parse(line);
+//            logger.debug(line);
+            PP = Math.round(Float.valueOf(json.get("pp").getString()));
+            aimPP = Math.round(Float.valueOf(json.get("aim_pp").getString()));
+            speedPP = Math.round(Float.valueOf(json.get("speed_pp").getString()));
+            accPP = Math.round(Float.valueOf(json.get("acc_pp").getString()));
+//            map.setArtist(json.get("artist_unicode").getString());
+//            map.setTitle(json.get("title_unicode").getString());
+        } catch (InterruptedException | IOException | ParserException e) {
+            logger.error("离线计算PP出错");
+            logger.error(e.getMessage());
+            return "error";
+        }
+        logger.info("离线计算PP完成");
         //获取bp原分辨率，将宽拉到1366，然后算出高，减去768除以二然后上下各减掉这部分
         int resizedWeight = 1366;
         int resizedHeight = (int) Math.ceil((float) bg.getHeight() / bg.getWidth() * 1366);
@@ -680,8 +726,6 @@ public class imgUtil {
             heightDiff = 0;
             widthDiff = ((resizedWeight - 1366) / 2);
         }
-
-
         //把BG横向拉到1366;
         //忘记在这里处理了
         BufferedImage resizedBGTmp = new BufferedImage(resizedWeight, resizedHeight, bg.getType());
@@ -886,7 +930,7 @@ public class imgUtil {
         }
 
         //MOD
-        List<String> mods = convertMOD(bp.getEnabled_mods());
+
 
         java.util.Map<String, Integer> modMap = new HashMap<>();
         modMap.put("DT", 0);
@@ -906,10 +950,23 @@ public class imgUtil {
             logger.info("正在绘制mod图标：" + mods.get(i));
             g2.drawImage(Mods.get(modMap.get(mods.get(i))), 1237 - (50 * i), 375, null);
         }
+        //底端PP面板
+        g2.drawImage(zPP, 570, 700, null);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setPaint(Color.decode("#ff66a9"));
+        g2.setFont(new Font("Gayatri", 0, 60));
+        if (String.valueOf(PP).contains("1")) {
+            g2.drawString(String.valueOf(PP), 616, 753);
+        }else{
+            g2.drawString(String.valueOf(PP), 601, 753);
+        }
+        g2.setFont(new Font("Gayatri", 0, 48));
+        g2.drawString(String.valueOf(aimPP), 834, 758);
+        g2.drawString(String.valueOf(speedPP), 932, 758);
+        g2.drawString(String.valueOf(accPP), 1030, 758);
 
 
         //写字
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         //指定颜色
         g2.setPaint(Color.decode("#FFFFFF"));
         //指定字体
@@ -921,9 +978,8 @@ public class imgUtil {
         g2.drawString("Played by " + user.getUsername() + " on " + new SimpleDateFormat("yy/MM/dd HH:mm:ss").format(bp.getDate()) + ".", 7, 74);
         g2.dispose();
 
-
+        //削弱结果图片的颜色
         BufferedImage result = new BufferedImage(1366, 768, BufferedImage.TYPE_USHORT_555_RGB);
-//        BufferedImage result = new BufferedImage(1366, 768, BufferedImage.TYPE_BYTE_INDEXED);
         Graphics2D g3 = result.createGraphics();
         g3.clearRect(0, 0, 1366, 768);
         g3.drawImage(resizedBG.getScaledInstance(1366, 768, Image.SCALE_SMOOTH), 0, 0, null);
@@ -942,7 +998,7 @@ public class imgUtil {
             // from your JPEGImageWriteParam instance
 //            writer.write(null, new IIOImage(resizedBG, null, null), jpegParams);
 //            writer.dispose();
-            //改用stackoverflow看到的调整jpg画质的方法，得到了折中方案
+
             ImageIO.write(result, "png", new File(rb.getString("path") + "\\data\\image\\" + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png"));
 //            logger.info("正在压缩图片");
 //            Process process = Runtime.getRuntime().exec(cmd + bp.getBeatmap_id() + "_" + new SimpleDateFormat("yy-MM-dd").format(bp.getDate()) + ".png\"");

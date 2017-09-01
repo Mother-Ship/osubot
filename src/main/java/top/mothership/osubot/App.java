@@ -5,8 +5,6 @@ import cc.plural.jsonij.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.drafts.Draft;
-import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
 import top.mothership.osubot.thread.adminThread;
@@ -78,8 +76,8 @@ public class App {
 
                 public void onMessage(String message) {
                     try {
-
                         JSON json = JSON.parse(message);
+
                         //原作者使用了String.format，我尝试使用.getString方法。其实我没用过这个json解析器……
                         //新增一个入口，检测是否是管理员消息
                         // 原有逻辑：如果是群消息，对msg进行识别，如果感叹号开头就开启新线程传入。

@@ -1,5 +1,7 @@
 package top.mothership.osubot.thread;
 
+import cc.plural.jsonij.JSON;
+import cc.plural.jsonij.parser.ParserException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
@@ -11,8 +13,11 @@ import top.mothership.osubot.util.dbUtil;
 import top.mothership.osubot.util.imgUtil;
 import top.mothership.osubot.util.pageUtil;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.sql.Timestamp;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -33,15 +38,17 @@ public class playerThread extends Thread {
     private apiUtil apiUtil = new apiUtil();
     private dbUtil dbUtil = new dbUtil();
     private pageUtil pageUtil = new pageUtil();
-    private ResourceBundle rb;
+    private ResourceBundle rb = ResourceBundle.getBundle("cabbage");
     private Matcher m;
     private boolean group = false;
     private Date startDate;
+
+
     public playerThread(String msg, String groupName, String groupId, String fromQQ, WebSocketClient cc) {
         this.msg = msg;
         this.fromQQ = fromQQ;
         this.cc = cc;
-        rb = ResourceBundle.getBundle("cabbage");
+
         if (groupId != null) {
             this.groupId = groupId;
             startDate = Calendar.getInstance().getTime();
@@ -122,11 +129,13 @@ public class playerThread extends Thread {
 
             if ("白菜".equals(username)) {
                 sendMsg("大白菜（学名：Brassica rapa pekinensis，异名Brassica campestris pekinensis或Brassica pekinensis）是一种原产于中国的蔬菜，又称“结球白菜”、“包心白菜”、“黄芽白”、“胶菜”等。(via 维基百科)");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return;
             }
             User user = apiUtil.getUser(username, 0);
             if (user == null) {
                 sendMsg("没有在官网查到这个玩家。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return;
             }
 
@@ -138,17 +147,18 @@ public class playerThread extends Thread {
             String username = m.group(2).substring(1);
             logger.info("尝试将" + username + "绑定到" + fromQQ + "上");
             if ("白菜".equals(username)) {
-                if(fromQQ.equals("1335734657")) {
+                if (fromQQ.equals("1335734657")) {
                     sendMsg("将" + username + "绑定到" + fromQQ + "成功");
-                }else{
+                } else {
                     sendMsg("这个osu账号已经绑定了" + 1335734657 + "，如果发生错误请联系妈妈船。");
                 }
-                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return;
             }
             User user = apiUtil.getUser(username, 0);
-            if(user==null){
+            if (user == null) {
                 sendMsg("没有在官网找到该玩家。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return;
             }
             checkFirst(user);
@@ -160,7 +170,7 @@ public class playerThread extends Thread {
                 if (dbUtil.getQQ(userId) == null) {
                     dbUtil.setId(String.valueOf(fromQQ), userId);
                     sendMsg("将" + username + "绑定到" + fromQQ + "成功");
-                }else{
+                } else {
                     sendMsg("你的osu账号已经绑定了" + fromQQ + "，如果发生错误请联系妈妈船。");
                 }
             } else {
@@ -174,6 +184,7 @@ public class playerThread extends Thread {
             int userId = dbUtil.getId(fromQQ);
             if (userId == 0) {
                 sendMsg("你没有绑定默认id。请使用!setid命令。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return;
             }
             logger.info("检测到对" + userId + "的查询");
@@ -195,6 +206,7 @@ public class playerThread extends Thread {
             int userId = dbUtil.getId(fromQQ);
             if (userId == 0) {
                 sendMsg("你没有绑定默认id。请使用!setid命令。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return;
             }
             logger.info("检测到对" + userId + "的BP查询");
@@ -215,13 +227,16 @@ public class playerThread extends Thread {
                 sendMsg("你没有绑定默认id。请使用!setid命令。");
                 return;
             }
-            logger.info("检测到对" + userId + "的最近游戏记录查询");
+
             User user = apiUtil.getUser(null, userId);
+            logger.info("检测到对" + user.getUsername() + "的最近游戏记录查询");
             BP bp = apiUtil.getRecentScore(null, userId);
             if (bp == null) {
                 sendMsg("玩家" + user.getUsername() + "最近没有游戏记录。");
                 return;
             }
+
+
             Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
             String filename = imgUtil.drawOneBP(user, bp, map);
             if (filename.equals("error")) {
@@ -238,7 +253,7 @@ public class playerThread extends Thread {
             delete(filename);
 
         }
-        logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+        logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
 
     }
 
@@ -249,7 +264,7 @@ public class playerThread extends Thread {
             if (num < 0 || num > 100) {
                 sendMsg("其他人看不到的东西，白菜也看不到啦。");
                 logger.info("BP不能大于100或者小于0");
-                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return false;
             } else {
                 return true;
@@ -257,7 +272,7 @@ public class playerThread extends Thread {
         } catch (java.lang.NumberFormatException e) {
             sendMsg("Ай-ай-ай-ай-ай, что сейчас произошло!");
             logger.info("给的BP数目不是int");
-            logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+            logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
             return false;
         }
     }
@@ -269,20 +284,20 @@ public class playerThread extends Thread {
             if (day > (int) ((new java.util.Date().getTime() - new SimpleDateFormat("yyyy-MM-dd").parse("2007-09-16").getTime()) / 1000 / 60 / 60 / 24)) {
                 sendMsg("你要找史前时代的数据吗。");
                 logger.info("指定的日期早于osu!首次发布日期");
-                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return false;
             }
             if (day < 0) {
                 sendMsg("白菜不会预知未来。");
                 logger.info("天数不能为负值");
-                logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+                logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
                 return false;
             }
 
         } catch (java.lang.NumberFormatException e) {
             sendMsg("假使这些完全……不能用的参数，你再给他传一遍，你等于……你也等于……你也有泽任吧？");
             logger.info("给的天数不是int值");
-            logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
+            logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
             return false;
         } catch (ParseException e) {
             //由于解析的是固定字符串，不会出异常，无视
@@ -306,12 +321,12 @@ public class playerThread extends Thread {
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
         //需要同时传递BP的位置和本体
-        java.util.Map<BP,Integer> result = new HashMap<>();
+        java.util.Map<BP, Integer> result = new HashMap<>();
 
-        for (int i=0;i<list.size();i++) {
+        for (int i = 0; i < list.size(); i++) {
             //对BP进行遍历，如果产生时间晚于当天凌晨4点
             if (list.get(i).getDate().after(c.getTime())) {
-                result.put(list.get(i),i);
+                result.put(list.get(i), i);
             }
         }
 
@@ -380,14 +395,14 @@ public class playerThread extends Thread {
 
         String role = dbUtil.getUserRole(userFromAPI.getUser_id());
         int scoreRank;
-        if(userFromAPI.getUser_id()==1244312
-                ||userFromAPI.getUser_id()==6149313
-                ||userFromAPI.getUser_id()==3213720){
+        if (userFromAPI.getUser_id() == 1244312
+                || userFromAPI.getUser_id() == 6149313
+                || userFromAPI.getUser_id() == 3213720) {
             scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 10000);
-        }else {
+        } else {
             scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 2000);
         }
-        String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near,scoreRank);
+        String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near, scoreRank);
         if (filename.equals("error")) {
             sendMsg("绘图过程中发生致命错误。");
         }

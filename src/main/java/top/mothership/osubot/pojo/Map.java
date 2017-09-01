@@ -1,6 +1,9 @@
 package top.mothership.osubot.pojo;
 
 public class Map {
+    private Integer approved;
+
+
     private String artist;
     private String title;
     private String version;
@@ -10,6 +13,13 @@ public class Map {
         return creator;
     }
 
+    public Integer getApproved() {
+        return approved;
+    }
+
+    public void setApproved(Integer approved) {
+        this.approved = approved;
+    }
     public void setCreator(String creator) {
         this.creator = creator;
     }
