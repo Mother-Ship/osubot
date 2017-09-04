@@ -244,13 +244,6 @@ public class playerThread extends Thread {
                 return;
             }
             sendMsg("[CQ:image,file=" + filename + "]");
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-//            删掉生成的文件
-            delete(filename);
 
         }
         logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
@@ -370,13 +363,6 @@ public class playerThread extends Thread {
             }
         }
 
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-//            删掉生成的文件
-        delete(filename);
     }
 
 
@@ -409,14 +395,6 @@ public class playerThread extends Thread {
         logger.info("绘制完成，正在发送……");
         //由于带[]的玩家，生成的文件名会导致返回出错，直接在imgUtil改为用数字id生成文件
         sendMsg("[CQ:image,file=" + filename + "]");
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        //删掉生成的文件
-        logger.info("发送完成，正在删除……");
-        delete(filename);
     }
 
 
@@ -436,11 +414,6 @@ public class playerThread extends Thread {
         }
     }
 
-
-    private void delete(String filename) {
-        File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
-        f.delete();
-    }
 
 
 }

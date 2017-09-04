@@ -32,14 +32,11 @@ public class entryJob extends TimerTask {
         List<Integer> list = dbUtil.listUserId();
         for (Integer aList : list) {
             User user = null;
-            while (user == null) {
+            while (true) {
                     //这里的user是保证官网存在的，所以可能的异常只有网络错误一种
                     user = apiUtil.getUser(null,aList);
-                try {
-                    //停止500ms，避免触发API频繁操作
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                if(user!=null){
+                    break;
                 }
             }
             //将日期改为一天前写入

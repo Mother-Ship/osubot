@@ -44,6 +44,7 @@ public class imgUtil {
     private static BufferedImage SH;
     private static BufferedImage zPP;
     private static BufferedImage layout;
+
     static {
         final Path resultPath = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
         //使用NIO扫描文件夹
@@ -187,24 +188,30 @@ public class imgUtil {
         BufferedImage layout = null;
         BufferedImage resizedAva;
         BufferedImage scoreRankBG = null;
+        BufferedImage roleImg;
+        try {
+            layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("layout")));
+            scoreRankBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("scoreRankBG")));
+        } catch (IOException e) {
+            logger.error("读取stat的本地资源失败");
+            logger.error(e.getMessage());
+            return "error";
+        }
         try {
             bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + userFromAPI.getUser_id() + ".png"));
+            roleImg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
         } catch (IOException e) {
             //所有没有独立bg的都采用默认bg
             //为了防止错乱，尝试使用获取子图片的方法
             try {
-                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
-            } catch (IOException e1) {
-                try {
-                    layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("layout")));
-                    scoreRankBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("scoreRankBG")));
-                    bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("defaultbg")));
-                } catch (IOException e2) {
-                    logger.error("读取stat的本地资源失败");
-                    logger.error(e1.getMessage());
-                    return "error";
-                }
+                roleImg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + rb.getString("defaultRole")));
+                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("defaultbg")));
+            } catch (IOException e2) {
+                logger.error("读取stat的本地资源失败");
+                logger.error(e2.getMessage());
+                return "error";
             }
+
 
         }
         logger.info("正在获取头像");
@@ -252,10 +259,9 @@ public class imgUtil {
         }
 
 
-        //绘制布局
-        g2.drawImage(layout, 0,0, null);
-
-
+        //绘制布局和用户组
+        g2.drawImage(layout, 0, 0, null);
+        g2.drawImage(roleImg, 0, 0, null);
         //绘制文字
         //开启平滑
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -485,7 +491,7 @@ public class imgUtil {
             bpTop = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("bptop")));
             for (BP aList : map.keySet()) {
                 //准备好和BP数量相同的List
-                if (aList.getBeatmap_name().length() < Integer.valueOf(rb.getString("bplimit"))) {
+                if (aList.getBeatmap_name().length() <= Integer.valueOf(rb.getString("bplimit"))) {
                     //根据谱面名称+难度的长度读取BG
                     BufferedImage bpmidTmp = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bp" + rb.getString("bpmid2")));
                     bpmids2.add(bpmidTmp);
@@ -669,11 +675,12 @@ public class imgUtil {
 
     public String drawOneBP(User user, BP bp, Map map) {
         logger.info("开始绘制" + map.getArtist() + " - " + map.getTitle() + " [" + map.getVersion() + "]的结算界面");
+        String accS = new DecimalFormat("###.00").format(100.0 * (6 * bp.getCount300() + 2 * bp.getCount100() + bp.getCount50()) / (6 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + bp.getCountmiss())));
+        float acc = Float.valueOf(accS);
         BufferedImage bg;
 
         try {
-            //此处传入的应该是用户的数字id
-            bg = pageUtil.getBG(bp.getBeatmap_id());
+            bg = pageUtil.getBG(bp.getBeatmap_id(),map);
         } catch (IOException | NullPointerException e) {
             logger.error("从血猫抓取谱面背景失败");
             logger.error(e.getMessage());
@@ -693,8 +700,8 @@ public class imgUtil {
             if (mods.size() > 0) {
                 cmd = cmd.concat("+" + mods.toString().replaceAll("[\\[\\] ,]", "") + " ");
             }
-            cmd = cmd + bp.getCount100() + "x100 " + bp.getCount50() + "x50 "
-                    + bp.getCountmiss() + "m " + bp.getMaxcombo() + "x";
+            //改为直接计算ACC
+            cmd = cmd +acc+ "% "+bp.getMaxcombo()+"x";
             Process process = Runtime.getRuntime().exec(cmd);
 //            logger.debug(cmd);
             process.waitFor();
@@ -734,7 +741,7 @@ public class imgUtil {
         g.dispose();
 
         //切割图片
-        BufferedImage resizedBG = new BufferedImage(1366, 768, bg.getType());
+        BufferedImage resizedBG = new BufferedImage(1366, 768, BufferedImage.TYPE_INT_RGB);
         for (int x = 0; x < 1366; x++) {
             //这里之前用了原bg拉伸之前的分辨率，难怪报错
             for (int y = 0; y < 768; y++) {
@@ -902,8 +909,7 @@ public class imgUtil {
         g2.drawImage(Nums.get(13).getScaledInstance(40, 51, Image.SCALE_SMOOTH), 37 * Count0.length + 455 - 8, 470 - 55, null);
 
         //acc
-        String accS = new DecimalFormat("###.00").format(100.0 * (6 * bp.getCount300() + 2 * bp.getCount100() + bp.getCount50()) / (6 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + bp.getCountmiss())));
-        float acc = Float.valueOf(accS);
+
 
         if (acc == 100) {
             //从最左边的数字开始，先画出100
@@ -957,7 +963,7 @@ public class imgUtil {
         g2.setFont(new Font("Gayatri", 0, 60));
         if (String.valueOf(PP).contains("1")) {
             g2.drawString(String.valueOf(PP), 616, 753);
-        }else{
+        } else {
             g2.drawString(String.valueOf(PP), 601, 753);
         }
         g2.setFont(new Font("Gayatri", 0, 48));

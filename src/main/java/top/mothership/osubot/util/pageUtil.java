@@ -38,10 +38,16 @@ public class pageUtil {
         return ImageIO.read(avaurl);
     }
 
-    public BufferedImage getBG(int bid)throws IOException {
+    public BufferedImage getBG(int bid, top.mothership.osubot.pojo.Map map)throws IOException {
         HttpURLConnection httpConnection = null;
         int retry = 0;
         BufferedImage img = null;
+        File bg = new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png");
+
+        if(bg.length()>0&&(map.getApproved()==1||map.getApproved()==2)){
+            //如果osu文件大小大于0，并且状态是ranked
+            return ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png"));
+        }
         while (retry < 8) {
             try {
 
@@ -58,6 +64,8 @@ public class pageUtil {
                 }
                 //读取返回结果
                 img = ImageIO.read(httpConnection.getInputStream());
+                //同时写入硬盘
+                ImageIO.write(img,"png",new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png"));
                 //手动关闭流
                 httpConnection.disconnect();
 

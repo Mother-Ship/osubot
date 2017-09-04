@@ -35,8 +35,9 @@ public class App {
     private static int start = 0;
     private static int end = 0;
     private static int len = 0;
-    private static List<String> qunAdmin = Arrays.asList("2643555740", "290514894", "2307282906", "2055805091", "735862173",
+    private static List<String> mp5Admin = Arrays.asList("2643555740", "290514894", "2307282906", "2055805091", "735862173",
             "1142592265", "263202941", "992931505", "1335734657", "526942417", "1012621328");
+    private static List<String> mp4Admin = Arrays.asList("89217167","295539897","290514894","2307282906","2643555740","2055805091","954176984","879804833","526942417");
     /*
     业务逻辑:监听群消息，当检测到!stat开头的消息时，分割出后面的用户名，开新线程请求屙屎的api
 
@@ -49,7 +50,7 @@ public class App {
      */
 
     public static void main(String[] args) {
-        logger.info("欢迎使用白菜1.0");
+        logger.info("欢迎使用白菜1.1");
         //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
@@ -230,9 +231,13 @@ public class App {
         }
         if (count >= 6) {
             String resp;
-            if (qunAdmin.contains(fromQQ)) {
+            if (mp5Admin.contains(fromQQ)&&groupId.equals("201872650")) {
                 logger.info("检测到群管" + fromQQ + "的复读");
                 resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 检测到群管" + "[CQ:at,qq=" + fromQQ + "] 复读。" + "\"}";
+
+            } else if(mp4Admin.contains(fromQQ)&&groupId.equals("564679329")){
+                logger.info("检测到群管" + fromQQ + "的复读");
+                resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=1012621328] 检测到群管" + "[CQ:at,qq=" + fromQQ + "] 复读。" + "\"}";
 
             } else {
                 logger.info("正在尝试禁言" + fromQQ);

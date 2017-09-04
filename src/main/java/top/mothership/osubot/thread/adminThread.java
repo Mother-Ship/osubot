@@ -318,13 +318,7 @@ public class adminThread extends Thread {
                 return;
             }
             sendMsg("[CQ:image,file=" + filename + "]");
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-//            删掉生成的文件
-            delete(filename);
+
 
         }
         if ("afk".equals(msg.substring(6, 9))) {
@@ -395,9 +389,5 @@ public class adminThread extends Thread {
 
         logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
 
-    }
-    private void delete(String filename) {
-        File f = new File(rb.getString("path") + "\\data\\image\\" + filename);
-        f.delete();
     }
 }
