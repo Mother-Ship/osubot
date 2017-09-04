@@ -573,6 +573,7 @@ public class imgUtil {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             //开始绘制谱面名称，因为是二行的数据所以不需要分割
             draw(g, "bpNameColor", "bpNameFont", "bpNameSize",
+
                     bp2.get(i).getBeatmap_name() + "(" + new DecimalFormat("###.00").format(100.0 * (6 * bp2.get(i).getCount300() + 2 * bp2.get(i).getCount100() + bp2.get(i).getCount50()) / (6 * (bp2.get(i).getCount50() + bp2.get(i).getCount100() + bp2.get(i).getCount300() + bp2.get(i).getCountmiss()))) + "%)", "bp2Namex", "bp2Namey");
             //绘制日期(给的就是北京时间，不转)
             draw(g, "bpDateColor", "bpDateFont", "bpDateSize",
@@ -695,11 +696,24 @@ public class imgUtil {
         int accPP;
         try {
             cmd = cmd + osuFile + "\" -ojson ";
+            if (bp.getRank().equals("F")) {
+                Process process = Runtime.getRuntime().exec(cmd);
+                process.waitFor();
+                bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()), 1024);
+                String line = bufferedReader.readLine();
+                JSON json = JSON.parse(line);
+
+                //将Fail成绩中没打的note看做miss
+                acc = Float.valueOf(new DecimalFormat("###.00").format(100.0 * (6 * bp.getCount300() + 2 * bp.getCount100() + bp.getCount50())
+                        / (6 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt() - bp.getCount300() - bp.getCount100() - bp.getCount50()))));
+            }
+
             if (mods.size() > 0) {
                 cmd = cmd.concat("+" + mods.toString().replaceAll("[\\[\\] ,]", "") + " ");
             }
             //改为直接计算ACC
-            cmd = cmd + acc + "% " + bp.getMaxcombo() + "x";
+            cmd = cmd + acc + "% " + bp.getCountmiss() + "m " + bp.getMaxcombo() + "x";
+            acc = Float.valueOf(accS);
             Process process = Runtime.getRuntime().exec(cmd);
 //            logger.debug(cmd);
             process.waitFor();
