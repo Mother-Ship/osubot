@@ -191,6 +191,7 @@ public class imgUtil {
         BufferedImage roleImg;
         try {
             layout = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("layout")));
+            roleImg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\role-" + role + ".png"));
             scoreRankBG = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("scoreRankBG")));
         } catch (IOException e) {
             logger.error("读取stat的本地资源失败");
@@ -199,25 +200,25 @@ public class imgUtil {
         }
         try {
             bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + userFromAPI.getUser_id() + ".png"));
-            roleImg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
         } catch (IOException e) {
-            //所有没有独立bg的都采用默认bg
-            //为了防止错乱，尝试使用获取子图片的方法
             try {
-                roleImg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + rb.getString("defaultRole")));
-                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat" + rb.getString("defaultbg")));
-            } catch (IOException e2) {
+                bg = ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\stat\\" + role + ".png"));
+            } catch (IOException e1) {
                 logger.error("读取stat的本地资源失败");
-                logger.error(e2.getMessage());
+                logger.error(e1.getMessage());
                 return "error";
+
             }
 
 
         }
-        logger.info("正在获取头像");
+
         //将布局图片初始化
         Graphics2D g2 = (Graphics2D) bg.getGraphics();
-
+        //绘制布局和用户组
+        g2.drawImage(roleImg, 0, 0, null);
+        g2.drawImage(layout, 0, 0, null);
+        logger.info("正在获取头像");
         try {
             //此处传入的应该是用户的数字id
             ava = pageUtil.getAvatar(userFromAPI.getUser_id());
@@ -259,9 +260,6 @@ public class imgUtil {
         }
 
 
-        //绘制布局和用户组
-        g2.drawImage(layout, 0, 0, null);
-        g2.drawImage(roleImg, 0, 0, null);
         //绘制文字
         //开启平滑
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -680,7 +678,7 @@ public class imgUtil {
         BufferedImage bg;
 
         try {
-            bg = pageUtil.getBG(bp.getBeatmap_id(),map);
+            bg = pageUtil.getBG(bp.getBeatmap_id(), map);
         } catch (IOException | NullPointerException e) {
             logger.error("从血猫抓取谱面背景失败");
             logger.error(e.getMessage());
@@ -701,7 +699,7 @@ public class imgUtil {
                 cmd = cmd.concat("+" + mods.toString().replaceAll("[\\[\\] ,]", "") + " ");
             }
             //改为直接计算ACC
-            cmd = cmd +acc+ "% "+bp.getMaxcombo()+"x";
+            cmd = cmd + acc + "% " + bp.getMaxcombo() + "x";
             Process process = Runtime.getRuntime().exec(cmd);
 //            logger.debug(cmd);
             process.waitFor();

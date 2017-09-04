@@ -191,9 +191,8 @@ public class apiUtil {
         }
 
         //组装实体类
-        Map map = new Gson().fromJson(output, Map.class);
         //组装返回字符串
-        return map;
+        return new Gson().fromJson(output, Map.class);
 
     }
     public BP getRecentScore(String username, int userId) {
