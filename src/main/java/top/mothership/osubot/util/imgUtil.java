@@ -341,7 +341,7 @@ public class imgUtil {
                 }
 
             }
-
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             //这样确保了userInDB不是空的
             //绘制Rank变化
