@@ -13,11 +13,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -48,7 +44,7 @@ public class apiUtil {
             return null;
         }
 
-        HttpURLConnection httpConnection = null;
+        HttpURLConnection httpConnection;
         String output = null;
         int retry = 0;
         while (retry < 8) {
@@ -121,10 +117,10 @@ public class apiUtil {
                 BufferedReader responseBuffer =
                         new BufferedReader(new InputStreamReader((httpConnection.getInputStream())));
                 //BP的返回结果有时候会有换行，必须手动拼接
-                String output = "";
+                StringBuilder output = new StringBuilder();
                 String tmp;
                 while ((tmp = responseBuffer.readLine()) != null) {
-                    output = output + tmp;
+                    output.append(tmp);
                 }
                 //手动关闭流
                 httpConnection.disconnect();
@@ -133,7 +129,7 @@ public class apiUtil {
                 //定义返回的List
                 Type listType = new TypeToken<List<BP>>() {
                 }.getType();
-                list = new Gson().fromJson(output, listType);
+                list = new Gson().fromJson(output.toString(), listType);
                 break;
             } catch (IOException e) {
                 logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");
@@ -152,7 +148,7 @@ public class apiUtil {
 
 
     public Map getMapDetail(int bid){
-        HttpURLConnection httpConnection = null;
+        HttpURLConnection httpConnection;
         String output = null;
         int retry = 0;
         while (retry < 8) {
@@ -206,8 +202,7 @@ public class apiUtil {
             return null;
         }
         String output = null;
-        HttpURLConnection httpConnection = null;
-        List<BP> list = null;
+        HttpURLConnection httpConnection;
         int retry = 0;
         while (retry < 8) {
             try {
@@ -246,8 +241,7 @@ public class apiUtil {
 
 
         //组装实体类
-        BP bp = new Gson().fromJson(output, BP.class);
         //组装返回字符串
-        return bp;
+        return new Gson().fromJson(output, BP.class);
     }
 }

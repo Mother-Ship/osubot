@@ -47,10 +47,10 @@ public class adminThread extends Thread {
         if(groupId!=null) {
             this.groupId = groupId;
             group = true;
-            logger.info("检测到来自群：" + groupName + "的【" + fromQQ + "】的提权操作群消息："
+            logger.info("检测到来自群：" + groupName + "中【" + fromQQ + "】用户的提权操作群消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
         }else {
-            logger.info("检测到来自【" + fromQQ + "】的提权操作消息："
+            logger.info("检测到来自【" + fromQQ + "】用户的提权操作消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
         }
     }

@@ -232,11 +232,11 @@ public class App {
         if (count >= 6) {
             String resp;
             if (mp5Admin.contains(fromQQ)&&groupId.equals("201872650")) {
-                logger.info("检测到群管" + fromQQ + "的复读");
+                logger.info("检测到群管" + fromQQ + "的复读行为");
                 resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=2643555740] 检测到群管" + "[CQ:at,qq=" + fromQQ + "] 复读。" + "\"}";
 
             } else if(mp4Admin.contains(fromQQ)&&groupId.equals("564679329")){
-                logger.info("检测到群管" + fromQQ + "的复读");
+                logger.info("检测到群管" + fromQQ + "的复读行为");
                 resp = "{\"act\": \"101\", \"groupid\": \"" + groupId + "\", \"msg\":\"" + "[CQ:at,qq=1012621328] 检测到群管" + "[CQ:at,qq=" + fromQQ + "] 复读。" + "\"}";
 
             } else {

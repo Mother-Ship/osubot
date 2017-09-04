@@ -7,6 +7,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -39,12 +40,13 @@ public class pageUtil {
     }
 
     public BufferedImage getBG(int bid, top.mothership.osubot.pojo.Map map)throws IOException {
-        HttpURLConnection httpConnection = null;
+        HttpURLConnection httpConnection;
         int retry = 0;
-        BufferedImage img = null;
-        File bg = new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png");
+        BufferedImage bg;
+        BufferedImage resizedBG = null;
+        File bgFile = new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png");
 
-        if(bg.length()>0&&(map.getApproved()==1||map.getApproved()==2)){
+        if(bgFile.length()>0&&(map.getApproved()==1||map.getApproved()==2)){
             //如果osu文件大小大于0，并且状态是ranked
             return ImageIO.read(new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png"));
         }
@@ -63,9 +65,42 @@ public class pageUtil {
                     continue;
                 }
                 //读取返回结果
-                img = ImageIO.read(httpConnection.getInputStream());
+                bg = ImageIO.read(httpConnection.getInputStream());
+                //获取bp原分辨率，将宽拉到1366，然后算出高，减去768除以二然后上下各减掉这部分
+                int resizedWeight = 1366;
+                int resizedHeight = (int) Math.ceil((float) bg.getHeight() / bg.getWidth() * 1366);
+                int heightDiff = ((resizedHeight - 768) / 2);
+                int widthDiff = 0;
+                //如果算出重画之后的高<768(遇到金盏花这种特别宽的)
+                if (resizedHeight < 768) {
+                    resizedWeight = (int) Math.ceil((float) bg.getWidth() / bg.getHeight() * 768);
+                    resizedHeight = 768;
+                    heightDiff = 0;
+                    widthDiff = ((resizedWeight - 1366) / 2);
+                }
+                //把BG横向拉到1366;
+                //忘记在这里处理了
+                BufferedImage resizedBGTmp = new BufferedImage(resizedWeight, resizedHeight, bg.getType());
+                Graphics2D g = resizedBGTmp.createGraphics();
+                g.drawImage(bg.getScaledInstance(resizedWeight, resizedHeight, Image.SCALE_SMOOTH), 0, 0, resizedWeight, resizedHeight, null);
+                g.dispose();
+
+                //切割图片
+                resizedBG = new BufferedImage(1366, 768, BufferedImage.TYPE_INT_RGB);
+                for (int x = 0; x < 1366; x++) {
+                    //这里之前用了原bg拉伸之前的分辨率，难怪报错
+                    for (int y = 0; y < 768; y++) {
+                        resizedBG.setRGB(x, y, resizedBGTmp.getRGB(x + widthDiff, y + heightDiff));
+                    }
+                }
+                //刷新掉bg以及临时bg的缓冲，将其作废
+                resizedBGTmp.flush();
+
+                bg.flush();
+
+
                 //同时写入硬盘
-                ImageIO.write(img,"png",new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png"));
+                ImageIO.write(resizedBG,"png",new File(rb.getString("path") + "\\data\\image\\resource\\bg\\"+bid+".png"));
                 //手动关闭流
                 httpConnection.disconnect();
 
@@ -80,7 +115,7 @@ public class pageUtil {
             logger.error("获取" + bid + "的背景图，失败五次");
             throw new IOException();
         }
-        return img;
+        return resizedBG;
 
     }
 

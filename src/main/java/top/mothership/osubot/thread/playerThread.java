@@ -53,10 +53,10 @@ public class playerThread extends Thread {
             this.groupId = groupId;
             startDate = Calendar.getInstance().getTime();
             group = true;
-            logger.info("检测到来自群：" + groupName + "的【" + fromQQ + "】的操作群消息："
+            logger.info("检测到来自群：" + groupName + "中【" + fromQQ + "】用户的操作群消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
         } else {
-            logger.info("检测到来自【" + fromQQ + "】的操作消息："
+            logger.info("检测到来自【" + fromQQ + "】用户的操作消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
         }
         m = Pattern.compile(mainRegex).matcher(msg);
@@ -245,6 +245,15 @@ public class playerThread extends Thread {
             }
             sendMsg("[CQ:image,file=" + filename + "]");
 
+        }
+        if(m.group(1).equals("help")){
+            logger.info("正在发送帮助信息");
+            if((int)(Math.random()*10)==1) {
+                logger.info("QQ"+fromQQ+"抽中了1/10的几率，触发了Trick");
+                sendMsg("[CQ:image,file=!helpTrick.png]");
+            }else{
+                sendMsg("[CQ:image,file=!help.png]");
+            }
         }
         logger.info("线程" + this.getName() + "处理完毕，共耗费" + (Calendar.getInstance().getTimeInMillis() - startDate.getTime()) + "ms。");
 
