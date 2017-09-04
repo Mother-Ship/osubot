@@ -13,11 +13,7 @@ import top.mothership.osubot.util.dbUtil;
 import top.mothership.osubot.util.imgUtil;
 import top.mothership.osubot.util.pageUtil;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.text.DecimalFormat;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -48,10 +44,10 @@ public class playerThread extends Thread {
         this.msg = msg;
         this.fromQQ = fromQQ;
         this.cc = cc;
-
+        startDate = Calendar.getInstance().getTime();
         if (groupId != null) {
             this.groupId = groupId;
-            startDate = Calendar.getInstance().getTime();
+
             group = true;
             logger.info("检测到来自群：" + groupName + "中【" + fromQQ + "】用户的操作群消息："
                     + msg + ",已交给线程" + this.getName() + "处理");
