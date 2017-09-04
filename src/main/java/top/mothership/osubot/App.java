@@ -26,11 +26,11 @@ import java.util.regex.Pattern;
  * Hello world!
  */
 public class App {
-    public static WebSocketClient cc;
-    public static boolean connected = false;
+    private static WebSocketClient cc;
+    private static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
-    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([^\\u4e00-\\u767c\\u767e-\\u83db\\u83dd-\\u9fa5]*+)";
-    private static String imgRegex = "\\[CQ:image,file=(.+)\\](.*)";
+    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([\\u892a\\u88d9\\u9000\\u7fa4\\u767d\\u83dcA-Za-z0-9\\[\\] :]*+)";
+    private static String imgRegex = "(.*)\\[CQ:image,file=(.+)\\](.*)";
     private static String[] msgs = new String[200];
     private static int start = 0;
     private static int end = 0;
@@ -50,7 +50,7 @@ public class App {
      */
 
     public static void main(String[] args) {
-        logger.info("欢迎使用白菜1.1");
+        logger.info("欢迎使用白菜1.1-2017-9-4 19:48:26版本");
         //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
@@ -90,6 +90,7 @@ public class App {
                             //对msg进行反转义
                             msg = msg.replaceAll("&#91;", "[");
                             msg = msg.replaceAll("&#93;", "]");
+                            String msgWithoutImage;
                             String groupId = null;
                             String groupName = null;
                             String fromQQ;
@@ -105,16 +106,23 @@ public class App {
                                 //私聊消息识别汉字
                                 mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)(.*+)";
                             }
-                            if (msg.matches(mainRegex)) {
-                                Matcher m = Pattern.compile(mainRegex).matcher(msg);
+                            //带图片的刮掉
+                            Matcher m = Pattern.compile(imgRegex).matcher(msg);
+                            if (m.find()) {
+                                msgWithoutImage = m.group(1)+m.group(3);
+                            }else{
+                                msgWithoutImage = msg;
+                            }
+                            if (msgWithoutImage.matches(mainRegex)) {
+                                m = Pattern.compile(mainRegex).matcher(msgWithoutImage);
                                 m.find();
                                 //如果消息匹配正则表达式
                                 if (m.group(1).equals("sudo")) {
-                                    adminThread at = new adminThread(msg, groupName, groupId, fromQQ, cc);
+                                    adminThread at = new adminThread(msgWithoutImage, groupName, groupId, fromQQ, cc);
                                     at.start();
                                 } else {
                                     //开启新线程，将msg传入
-                                    playerThread pt = new playerThread(msg, groupName, groupId, fromQQ, cc);
+                                    playerThread pt = new playerThread(msgWithoutImage, groupName, groupId, fromQQ, cc);
                                     pt.start();
                                 }
                             } else {
@@ -181,18 +189,11 @@ public class App {
     计算所有value的HashCode，如果遇到重复的，就原地创建一个LinkedList,把key关联它，把后来的value放在后面，这样最大限度的保证了根据key查找value的效率
 */
         int count = 0;
-        //如果消息带图片就刮掉
-        Matcher m = Pattern.compile(imgRegex).matcher(msg);
-        if (m.find()) {
-            msg = m.group(2);
-            if (msg.equals("")) {
-                msg = msg.concat("Image");
-            }
-        }
+
         //刮掉除了中文英文数字之外的东西
         msg = msg.replaceAll("[^\\u4e00-\\u9fa5a-zA-Z0-9]", "");
         //循环数组
-        if (groupId.equals("201872650") || groupId.equals("564679329")) {
+        if (groupId.equals("201872650") || groupId.equals("564679329")||groupId.equals("532783765")) {
             len++;
             if (len >= 200) {
                 len = 200;
@@ -211,18 +212,18 @@ public class App {
             if (start < end) {
                 //复读不抓三个字以下的和纯图片
                 for (int i = 0; i < end; i++) {
-                    if ((groupId + msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
+                    if ((groupId + msg).equals(msgs[i]) && msg.length() >= 3) {
                         count++;
                     }
                 }
             } else {
                 for (int i = 0; i < start - 1; i++) {
-                    if ((groupId + msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
+                    if ((groupId + msg).equals(msgs[i])  && msg.length() >= 3) {
                         count++;
                     }
                 }
                 for (int i = end; i < msgs.length; i++) {
-                    if ((groupId + msg).equals(msgs[i]) && !msg.equals("Image") && msg.length() >= 3) {
+                    if ((groupId + msg).equals(msgs[i]) && msg.length() >= 3) {
                         count++;
                     }
                 }

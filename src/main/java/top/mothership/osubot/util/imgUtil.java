@@ -696,24 +696,25 @@ public class imgUtil {
         int accPP;
         try {
             cmd = cmd + osuFile + "\" -ojson ";
-            if (bp.getRank().equals("F")) {
-                Process process = Runtime.getRuntime().exec(cmd);
-                process.waitFor();
-                bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()), 1024);
-                String line = bufferedReader.readLine();
-                JSON json = JSON.parse(line);
-
-                //将Fail成绩中没打的note看做miss
-                acc = Float.valueOf(new DecimalFormat("###.00").format(100.0 * (6 * bp.getCount300() + 2 * bp.getCount100() + bp.getCount50())
-                        / (6 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt() - bp.getCount300() - bp.getCount100() - bp.getCount50()))));
-            }
+//            if (bp.getRank().equals("F")) {
+//                Process process = Runtime.getRuntime().exec(cmd);
+//                process.waitFor();
+//                bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()), 1024);
+//                String line = bufferedReader.readLine();
+//                JSON json = JSON.parse(line);
+//
+//                //将Fail成绩中没打的note看做miss,这样会导致在acc=4%左右的情况下ACCPP达到4.6415112964168472e+050……
+//                acc = Float.valueOf(new DecimalFormat("###.00").format(100.0 * (6 * bp.getCount300() + 2 * bp.getCount100() + bp.getCount50())
+//                        / (6 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt() - bp.getCount300() - bp.getCount100() - bp.getCount50()))));
+//            }
 
             if (mods.size() > 0) {
                 cmd = cmd.concat("+" + mods.toString().replaceAll("[\\[\\] ,]", "") + " ");
             }
+//            logger.debug(acc);
             //改为直接计算ACC
             cmd = cmd + acc + "% " + bp.getCountmiss() + "m " + bp.getMaxcombo() + "x";
-            acc = Float.valueOf(accS);
+//            acc = Float.valueOf(accS);
             Process process = Runtime.getRuntime().exec(cmd);
 //            logger.debug(cmd);
             process.waitFor();
