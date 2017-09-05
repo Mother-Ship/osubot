@@ -2,6 +2,8 @@ package top.mothership.osubot.util;
 
 import com.google.gson.Gson;
 import junit.framework.TestCase;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -26,8 +28,11 @@ import java.util.regex.Pattern;
  * Created by QHS on 2017/8/24.
  */
 public class imgUtilTest extends TestCase {
-    private final String getUserURL = "https://osu.ppy.sh/u/";
+   private dbUtil dbUtil = new dbUtil();
+   private apiUtil apiUtil = new apiUtil();
+    private Logger logger = LogManager.getLogger(this.getClass());
     public void testDrawOneBP() throws Exception {
+
     }
 }
 
