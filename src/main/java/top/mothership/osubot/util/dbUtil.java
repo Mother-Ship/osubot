@@ -25,8 +25,13 @@ public class dbUtil {
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(rb.getString("jdbcURL"), rb.getString("jdbcUser"),
-                rb.getString("jdbcPwd"));
+        try {
+            return DriverManager.getConnection(rb.getString("jdbcURL"), rb.getString("jdbcUser"),
+                    rb.getString("jdbcPwd"));
+        } catch (SQLException e) {
+            return DriverManager.getConnection(rb.getString("jdbcURL"), rb.getString("jdbcUser"),
+                    rb.getString("jdbcDevPwd"));
+        }
     }
     //TODO 改造数据库工具，把SQL当做参数传入某个方法
     //客串查询userid有没有被存入过

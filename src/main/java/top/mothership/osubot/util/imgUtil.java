@@ -10,6 +10,7 @@ import top.mothership.osubot.pojo.User;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.Line2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -694,6 +695,7 @@ public class imgUtil {
         int aimPP;
         int speedPP;
         int accPP;
+        int progress;
         try {
             cmd = cmd + osuFile + "\" -ojson ";
 //            if (bp.getRank().equals("F")) {
@@ -722,6 +724,7 @@ public class imgUtil {
             String line = bufferedReader.readLine();
             JSON json = JSON.parse(line);
 //            logger.debug(line);
+            progress = 300*(bp.getCount50() + bp.getCount100() + bp.getCount300()+bp.getCountmiss())/(json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt());
             PP = Math.round(Float.valueOf(json.get("pp").getString()));
             aimPP = Math.round(Float.valueOf(json.get("aim_pp").getString()));
             speedPP = Math.round(Float.valueOf(json.get("speed_pp").getString()));
@@ -784,10 +787,16 @@ public class imgUtil {
         }
         //右上角Ranking
         g2.drawImage(Images.get(20), 1029 - 66, 0, null);
+
         //RankGraph
         g2.drawImage(Images.get(16), 270 - 14, 613 - 6, null);
-
-
+        if(bp.getRank().equals("F")) {
+            g2.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.setColor(Color.decode("#99cc31"));
+            g2.drawLine(262, 615, 262 + progress, 615);
+            g2.setColor(Color.decode("#fe0000"));
+            g2.drawLine(262+progress,615,262+progress,753);
+        }
         //FC
         if (bp.getPerfect() == 1) {
             g2.drawImage(Images.get(17), 296 - 30, 675 - 37, null);

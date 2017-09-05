@@ -29,7 +29,7 @@ public class App {
     private static WebSocketClient cc;
     private static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
-    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([\\u892a\\u88d9\\u9000\\u7fa4\\u767d\\u83dcA-Za-z0-9\\[\\] :]*+)";
+    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([\\u892a\\u88d9\\u9000\\u7fa4\\u767d\\u83dcA-Za-z0-9\\[\\] :#]*+)";
     private static String imgRegex = "(.*)\\[CQ:image,file=(.+)\\](.*)";
     private static String[] msgs = new String[200];
     private static int start = 0;
@@ -50,7 +50,7 @@ public class App {
      */
 
     public static void main(String[] args) {
-        logger.info("欢迎使用白菜1.1-2017-9-4 19:48:26版本");
+        logger.info("欢迎使用白菜1.1-Build 2017-9-4 22:58:22");
         //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
