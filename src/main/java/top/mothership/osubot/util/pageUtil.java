@@ -29,7 +29,7 @@ public class pageUtil {
     private final String getUserProfileURL = "https://osu.ppy.sh/pages/include/profile-general.php?u=";
     private final String getBGURL = "http://bloodcat.com/osu/i/";
     private final String getOsuURL = "https://osu.ppy.sh/osu/";
-    private HashMap<Integer,Document> map = new HashMap();
+    private HashMap<Integer,Document> map = new HashMap<>();
     private static ResourceBundle rb = ResourceBundle.getBundle("cabbage");
     private apiUtil apiUtil = new apiUtil();
     //后续在这个类里解析dom树获取网页内容

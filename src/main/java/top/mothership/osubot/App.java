@@ -30,7 +30,8 @@ public class App {
     private static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
     private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([\\u892a\\u88d9\\u9000\\u7fa4\\u767d\\u83dcA-Za-z0-9\\[\\] :#]*+)";
-    private static String imgRegex = "(.*)\\[CQ:image,file=(.+)\\](.*)";
+    private static String imgRegex = ".*\\[CQ:image,file=(.+)\\].*";
+    private static String singleImgRegex = "\\[CQ:image,file=(.+)\\]";
     private static String[] msgs = new String[200];
     private static int start = 0;
     private static int end = 0;
@@ -50,7 +51,7 @@ public class App {
      */
 
     public static void main(String[] args) {
-        logger.info("欢迎使用白菜1.1-Build 2017-9-5 09:55:39");
+        logger.info("欢迎使用白菜1.1-Build 2017-9-5 10:47:08");
         //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
@@ -106,15 +107,14 @@ public class App {
                                 //私聊消息识别汉字
                                 mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)(.*+)";
                             }
-                            //带图片的刮掉
-                            Matcher m = Pattern.compile(imgRegex).matcher(msg);
-                            if (m.find()) {
-                                msgWithoutImage = m.group(1)+m.group(3);
+                            //带图片的刮掉(只要有一张图就刮掉所有图片)
+                            if(msg.matches(imgRegex)){
+                                msgWithoutImage = msg.replaceAll(imgRegex,"");
                             }else{
                                 msgWithoutImage = msg;
                             }
                             if (msgWithoutImage.matches(mainRegex)) {
-                                m = Pattern.compile(mainRegex).matcher(msgWithoutImage);
+                                Matcher m = Pattern.compile(mainRegex).matcher(msgWithoutImage);
                                 m.find();
                                 //如果消息匹配正则表达式
                                 if (m.group(1).equals("sudo")) {
@@ -189,6 +189,11 @@ public class App {
     计算所有value的HashCode，如果遇到重复的，就原地创建一个LinkedList,把key关联它，把后来的value放在后面，这样最大限度的保证了根据key查找value的效率
 */
         int count = 0;
+        //目的是能识别带图片的完全一致的消息，但是纯图片又不识别
+
+        if(msg.matches(singleImgRegex)){
+            msg = "Image";
+        }
 
         //刮掉除了中文英文数字之外的东西
         msg = msg.replaceAll("[^\\u4e00-\\u9fa5a-zA-Z0-9]", "");
@@ -212,18 +217,18 @@ public class App {
             if (start < end) {
                 //复读不抓三个字以下的和纯图片
                 for (int i = 0; i < end; i++) {
-                    if ((groupId + msg).equals(msgs[i]) && msg.length() >= 3) {
+                    if ((groupId + msg).equals(msgs[i])&&!msg.equals("Image") && msg.length() >= 3) {
                         count++;
                     }
                 }
             } else {
                 for (int i = 0; i < start - 1; i++) {
-                    if ((groupId + msg).equals(msgs[i])  && msg.length() >= 3) {
+                    if ((groupId + msg).equals(msgs[i])&&!msg.equals("Image")  && msg.length() >= 3) {
                         count++;
                     }
                 }
                 for (int i = end; i < msgs.length; i++) {
-                    if ((groupId + msg).equals(msgs[i]) && msg.length() >= 3) {
+                    if ((groupId + msg).equals(msgs[i])&&!msg.equals("Image") && msg.length() >= 3) {
                         count++;
                     }
                 }

@@ -313,7 +313,7 @@ public class adminThread extends Thread {
             Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
             String filename = imgUtil.drawOneBP(user, bp, map);
             if (filename.equals("error")) {
-                sendMsg("绘图过程中发生致命错误。");
+                sendMsg("[CQ:at,qq=1335734657]你摊上事了，赶紧去看日志");
                 logger.info("线程" + this.getName() + "处理完毕，共耗费"+(Calendar.getInstance().getTimeInMillis()-startDate.getTime())+"ms。");
                 return;
             }

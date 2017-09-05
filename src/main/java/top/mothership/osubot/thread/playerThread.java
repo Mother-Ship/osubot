@@ -236,7 +236,7 @@ public class playerThread extends Thread {
             Map map = apiUtil.getMapDetail(bp.getBeatmap_id());
             String filename = imgUtil.drawOneBP(user, bp, map);
             if (filename.equals("error")) {
-                sendMsg("绘图过程中发生致命错误。");
+                sendMsg("[CQ:at,qq=1335734657]你摊上事了，赶紧去看日志");
                 return;
             }
             sendMsg("[CQ:image,file=" + filename + "]");
@@ -344,7 +344,7 @@ public class playerThread extends Thread {
             }
             filename = imgUtil.drawUserBP(user, result);
             if (filename.equals("error")) {
-                sendMsg("绘图过程中发生致命错误。");
+                sendMsg("[CQ:at,qq=1335734657]你摊上事了，赶紧去看日志");
                 return;
             }
             sendMsg("[CQ:image,file=" + filename + "]");
@@ -361,7 +361,7 @@ public class playerThread extends Thread {
 
                 filename = imgUtil.drawOneBP(user, bp, map);
                 if (filename.equals("error")) {
-                    sendMsg("绘图过程中发生致命错误：本地资源读取失败。");
+                    sendMsg("[CQ:at,qq=1335734657]你摊上事了，赶紧去看日志");
                     return;
                 }
                 sendMsg("[CQ:image,file=" + filename + "]");
