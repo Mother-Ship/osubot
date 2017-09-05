@@ -44,7 +44,7 @@ public class imgUtil {
     private static BufferedImage S;
     private static BufferedImage SH;
     private static BufferedImage zPP;
-    private static BufferedImage layout;
+    private static BufferedImage zPPTrick;
 
     static {
         final Path resultPath = Paths.get(rb.getString("path") + "\\data\\image\\resource\\result");
@@ -74,6 +74,7 @@ public class imgUtil {
                 Mods.add(ImageIO.read(resultFiles.get(i)));
             }
             zPP = ImageIO.read(resultFiles.get(48));
+            zPPTrick = ImageIO.read(resultFiles.get(49));
         } catch (IOException e) {
             logger.error("读取result相关资源失败");
             logger.error(e.getMessage());
@@ -696,6 +697,8 @@ public class imgUtil {
         int speedPP;
         int accPP;
         int progress;
+        float speedStar;
+        float aimStar;
         try {
             cmd = cmd + osuFile + "\" -ojson ";
 //            if (bp.getRank().equals("F")) {
@@ -723,12 +726,15 @@ public class imgUtil {
             bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()), 1024);
             String line = bufferedReader.readLine();
             JSON json = JSON.parse(line);
-//            logger.debug(line);
-            progress = 300*(bp.getCount50() + bp.getCount100() + bp.getCount300()+bp.getCountmiss())/(json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt());
+            logger.debug(line);
+            progress = 300 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + bp.getCountmiss()) / (json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt());
             PP = Math.round(Float.valueOf(json.get("pp").getString()));
             aimPP = Math.round(Float.valueOf(json.get("aim_pp").getString()));
             speedPP = Math.round(Float.valueOf(json.get("speed_pp").getString()));
             accPP = Math.round(Float.valueOf(json.get("acc_pp").getString()));
+
+            speedStar = Float.valueOf(json.get("speed_stars").getString().substring(0, 4));
+            aimStar = Float.valueOf(json.get("aim_stars").getString().substring(0, 4));
 //            map.setArtist(json.get("artist_unicode").getString());
 //            map.setTitle(json.get("title_unicode").getString());
         } catch (InterruptedException | IOException | ParserException e) {
@@ -790,12 +796,12 @@ public class imgUtil {
 
         //RankGraph
         g2.drawImage(Images.get(16), 270 - 14, 613 - 6, null);
-        if(bp.getRank().equals("F")) {
+        if (bp.getRank().equals("F")) {
             g2.setStroke(new BasicStroke(3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g2.setColor(Color.decode("#99cc31"));
             g2.drawLine(262, 615, 262 + progress, 615);
             g2.setColor(Color.decode("#fe0000"));
-            g2.drawLine(262+progress,615,262+progress,753);
+            g2.drawLine(262 + progress, 615, 262 + progress, 753);
         }
         //FC
         if (bp.getPerfect() == 1) {
@@ -948,20 +954,42 @@ public class imgUtil {
             g2.drawImage(Mods.get(modMap.get(mods.get(i))), 1237 - (50 * i), 375, null);
         }
         //底端PP面板
-        g2.drawImage(zPP, 570, 700, null);
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setPaint(Color.decode("#ff66a9"));
-        g2.setFont(new Font("Gayatri", 0, 60));
-        if (String.valueOf(PP).contains("1")) {
-            g2.drawString(String.valueOf(PP), 616, 753);
-        } else {
-            g2.drawString(String.valueOf(PP), 601, 753);
-        }
-        g2.setFont(new Font("Gayatri", 0, 48));
-        g2.drawString(String.valueOf(aimPP), 834, 758);
-        g2.drawString(String.valueOf(speedPP), 932, 758);
-        g2.drawString(String.valueOf(accPP), 1030, 758);
+        if ((int) (Math.random() * 20) == 1) {
+            g2.drawImage(zPPTrick, 540, 200, null);
+            g2.setFont(new Font("Ubuntu Bold", Font.BOLD, 14));
+            g2.setPaint(Color.decode("#000000"));
+            g2.drawString(" " + String.valueOf(PP), 210 + 540, 76 + 200);
 
+            g2.drawString(String.valueOf(aimPP) + "PP", 349 + 540, 195 + 200);
+            g2.drawString(String.valueOf(speedPP) + "PP", 349 + 540, 241 + 200);
+            g2.drawString(String.valueOf(accPP) + "PP", 349 + 540, 284 + 200);
+
+            g2.drawString("Aim PP", 46 + 540, 195 + 200);
+            g2.drawString("Speed PP", 46 + 540, 241 + 200);
+            g2.drawString("Acc PP", 46 + 540, 284 + 200);
+            g2.setPaint(Color.decode("#8e8e8d"));
+
+            g2.drawString(String.valueOf(aimPP) + "PP", 142 + 540, 94 + 200);
+
+            g2.drawString("Aim Star: " + String.valueOf(aimStar), 253 + 540, 195 + 200);
+            g2.drawString("ACC: " + accS + "%", 253 + 540, 241 + 200);
+            g2.drawString("Spd Star: " + String.valueOf(speedStar), 253 + 540, 284 + 200);
+        } else {
+            g2.drawImage(zPP, 570, 700, null);
+
+            g2.setPaint(Color.decode("#ff66a9"));
+            g2.setFont(new Font("Gayatri", 0, 60));
+            if (String.valueOf(PP).contains("1")) {
+                g2.drawString(String.valueOf(PP), 616, 753);
+            } else {
+                g2.drawString(String.valueOf(PP), 601, 753);
+            }
+            g2.setFont(new Font("Gayatri", 0, 48));
+            g2.drawString(String.valueOf(aimPP), 834, 758);
+            g2.drawString(String.valueOf(speedPP), 932, 758);
+            g2.drawString(String.valueOf(accPP), 1030, 758);
+        }
 
         //写字
         //指定颜色
