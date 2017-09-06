@@ -32,7 +32,7 @@ public class App {
     private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([\\u892a\\u88d9\\u9000\\u7fa4\\u767d\\u83dcA-Za-z0-9\\[\\] :#]*+)";
     private static String imgRegex = ".*\\[CQ:image,file=(.+)\\].*";
     private static String singleImgRegex = "\\[CQ:image,file=(.+)\\]";
-    private static String[] msgs = new String[200];
+    private static String[] msgs = new String[100];
     private static int start = 0;
     private static int end = 0;
     private static int len = 0;
@@ -51,7 +51,7 @@ public class App {
      */
 
     public static void main(String[] args) {
-        logger.info("欢迎使用白菜1.1-Build 2017-9-5 14:46:05");
+        logger.info("欢迎使用白菜1.1-Build 2017-9-6 13:22:10");
         //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
@@ -109,7 +109,7 @@ public class App {
                             }
                             //带图片的刮掉(只要有一张图就刮掉所有图片)
                             if(msg.matches(imgRegex)){
-                                msgWithoutImage = msg.replaceAll(imgRegex,"");
+                                msgWithoutImage = msg.replaceAll(singleImgRegex,"");
                             }else{
                                 msgWithoutImage = msg;
                             }
@@ -200,14 +200,14 @@ public class App {
         //循环数组
         if (groupId.equals("201872650") || groupId.equals("564679329")||groupId.equals("532783765")) {
             len++;
-            if (len >= 200) {
-                len = 200;
+            if (len >= 100) {
+                len = 100;
                 start++;
             }
-            if (end == 200) {
+            if (end == 100) {
                 end = 0;
             }
-            if (start == 200) {
+            if (start == 100) {
                 start = 0;
             }
             //把群号拼在字符串上

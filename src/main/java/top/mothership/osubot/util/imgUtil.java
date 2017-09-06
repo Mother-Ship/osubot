@@ -726,7 +726,7 @@ public class imgUtil {
             bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()), 1024);
             String line = bufferedReader.readLine();
             JSON json = JSON.parse(line);
-            logger.debug(line);
+//            logger.debug(line);
             progress = 300 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + bp.getCountmiss()) / (json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt());
             PP = Math.round(Float.valueOf(json.get("pp").getString()));
             aimPP = Math.round(Float.valueOf(json.get("aim_pp").getString()));
@@ -973,8 +973,8 @@ public class imgUtil {
             g2.drawString(String.valueOf(aimPP) + "PP", 142 + 540, 94 + 200);
 
             g2.drawString("Aim Star: " + String.valueOf(aimStar), 253 + 540, 195 + 200);
-            g2.drawString("ACC: " + accS + "%", 253 + 540, 241 + 200);
-            g2.drawString("Spd Star: " + String.valueOf(speedStar), 253 + 540, 284 + 200);
+            g2.drawString("ACC: " + accS + "%", 253 + 540, 284 + 200);
+            g2.drawString("Spd Star: " + String.valueOf(speedStar), 253 + 540, 241 + 200);
         } else {
             g2.drawImage(zPP, 570, 700, null);
 
