@@ -36,7 +36,8 @@ public class apiUtil {
     public User getUser(String username, int userId) {
         String URL;
         if(username!=null&&userId==0){
-            URL = getUserURL + "?k=" + key + "&type=string&u=" + username;
+
+            URL = getUserURL + "?k=" + key + "&type=string&u=" + username.replaceAll(" ","_");
         }else if(username==null&&userId!=0){
             URL = getUserURL + "?k=" + key + "&type=id&u=" + userId;
         }else{
@@ -89,7 +90,7 @@ public class apiUtil {
     public List<BP> getAllBP(String username, int userId) {
         String URL;
         if(username!=null&&userId==0){
-            URL = getBPURL + "?k=" + key + "&type=string&limit=100&u=" + username;
+            URL = getBPURL + "?k=" + key + "&type=string&limit=100&u=" + username.replaceAll(" ","_");
         }else if(username==null&&userId!=0){
             URL = getBPURL + "?k=" + key + "&type=id&limit=100&u=" + userId;
         }else{
@@ -194,7 +195,7 @@ public class apiUtil {
     public BP getRecentScore(String username, int userId) {
         String URL;
         if(username!=null&&userId==0){
-            URL = getRecentURL + "?k=" + key + "&type=string&limit=1&u=" + username;
+            URL = getRecentURL + "?k=" + key + "&type=string&limit=1&u=" + username.replaceAll(" ","_");
         }else if(username==null&&userId!=0){
             URL = getRecentURL + "?k=" + key + "&type=id&limit=1&u=" + userId;
         }else{
