@@ -373,18 +373,27 @@ public class playerThread extends Thread {
 
     private void statUser(User userFromAPI, int day) {
 
-        //进行检验，是否初次使用
-        checkFirst(userFromAPI);
-
+        //进行检验，是否初次使用notFound
+        //如果day=0则不检验（不写入数据库，避免预先查过之后add不到）
         boolean near = false;
-        User userInDB = dbUtil.getUserInfo(userFromAPI.getUser_id(), day);
-        if (userInDB == null) {
-            //如果第一次没取到
-            userInDB = dbUtil.getNearestUserInfo(userFromAPI.getUser_id(), day);
-            near = true;
+        User userInDB = null;
+
+        if(day>0) {
+            checkFirst(userFromAPI);
+            userInDB = dbUtil.getUserInfo(userFromAPI.getUser_id(), day);
+            if (userInDB == null) {
+                //如果第一次没取到
+                userInDB = dbUtil.getNearestUserInfo(userFromAPI.getUser_id(), day);
+                near = true;
+            }
+
         }
 
-        String role = dbUtil.getUserRole(userFromAPI.getUser_id());
+        String  role = dbUtil.getUserRole(userFromAPI.getUser_id());
+        if("notFound".equals(role)){
+            role = "creep";
+        }
+
         int scoreRank;
         if (userFromAPI.getUser_id() == 1244312
                 || userFromAPI.getUser_id() == 6149313
@@ -393,6 +402,7 @@ public class playerThread extends Thread {
         } else {
             scoreRank = pageUtil.getRank(userFromAPI.getRanked_score(), 1, 2000);
         }
+
         String filename = imgUtil.drawUserInfo(userFromAPI, userInDB, role, day, near, scoreRank);
         if (filename.equals("error")) {
             sendMsg("绘图过程中发生致命错误。");

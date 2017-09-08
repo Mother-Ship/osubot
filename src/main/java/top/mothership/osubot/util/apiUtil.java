@@ -127,9 +127,10 @@ public class apiUtil {
                 responseBuffer.close();
                 logger.info("获得了" + username + "玩家的前100BP");
                 //定义返回的List
+               String output2 = output.toString().substring(1, output.length() - 1);
                 Type listType = new TypeToken<List<BP>>() {
                 }.getType();
-                list = new Gson().fromJson(output.toString(), listType);
+                list = new Gson().fromJson(output2, listType);
                 break;
             } catch (IOException e) {
                 logger.error("出现IO异常：" + e.getMessage() + "，正在重试第" + (retry + 1) + "次");

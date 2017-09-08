@@ -56,6 +56,7 @@ public class imgUtil {
         SimpleFileVisitor<Path> resultFinder = new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+//                logger.debug(file.getFileName().toString());
                 resultFiles.add(file.toFile());
                 return super.visitFile(file, attrs);
             }
