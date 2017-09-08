@@ -29,7 +29,7 @@ public class App {
     private static WebSocketClient cc;
     private static boolean connected = false;
     private static Logger logger = LogManager.getLogger(App.class);
-    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([\\u892a\\u88d9\\u9000\\u7fa4\\u767d\\u83dcA-Za-z0-9\\[\\] :#]*+)";
+    private static String mainRegex = "[!！]([^ \\u4e00-\\u9fa5]+)([\\u892a\\u88d9\\u9000\\u7fa4\\u767d\\u83dcA-Za-z0-9\\[\\] :#-_]*+)";
     private static String imgRegex = ".*\\[CQ:image,file=(.+)\\].*";
     private static String singleImgRegex = "\\[CQ:image,file=(.+)\\]";
     private static String[] msgs = new String[100];
@@ -51,7 +51,7 @@ public class App {
      */
 
     public static void main(String[] args) {
-        logger.info("欢迎使用白菜1.1-Build 2017-9-6 13:22:10");
+        logger.info("欢迎使用白菜1.1-Build 2017-9-8 12:36:55");
         //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
@@ -86,7 +86,7 @@ public class App {
                         // 现有逻辑：如果是群消息，识别是否是管理员专用的消息，如果是就交给adminThread，其他消息交给playerThread
 
                         //群消息和私聊消息合并
-                        if (json.get("act").getString().trim().equals("2") || json.get("act").getString().trim().equals("21")) {
+                        if (json.get("act").getString().trim().equals("2") || json.get("act").getString().trim().equals("21")|| json.get("act").getString().trim().equals("4")) {
                             String msg = json.get("msg").getString();
                             //对msg进行反转义
                             msg = msg.replaceAll("&#91;", "[");
