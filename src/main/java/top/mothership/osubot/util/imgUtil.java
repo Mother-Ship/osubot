@@ -713,9 +713,17 @@ public class imgUtil {
 //                acc = Float.valueOf(new DecimalFormat("###.00").format(100.0 * (6 * bp.getCount300() + 2 * bp.getCount100() + bp.getCount50())
 //                        / (6 * (bp.getCount50() + bp.getCount100() + bp.getCount300() + json.get("num_circles").getInt() + json.get("num_sliders").getInt() + json.get("num_spinners").getInt() - bp.getCount300() - bp.getCount100() - bp.getCount50()))));
 //            }
+            List<String> modsWithoutSD = new ArrayList<>();
+            if(mods.contains("SD")||mods.contains("PF")){
+                for (String mod : mods) {
+                    if (!mod.equals("SD") && !mod.equals("PF")) {
+                        modsWithoutSD.add(mod);
+                    }
+                }
+            }
+            if (modsWithoutSD.size() > 0) {
+                cmd = cmd.concat("+" + modsWithoutSD.toString().replaceAll("[\\[\\] ,]", "")+ " ");
 
-            if (mods.size() > 0) {
-                cmd = cmd.concat("+" + mods.toString().replaceAll("[\\[\\] ,]", "") + " ");
             }
 //            logger.debug(acc);
             //改为直接计算ACC

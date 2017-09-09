@@ -51,7 +51,7 @@ public class App {
      */
 
     public static void main(String[] args) {
-        logger.info("欢迎使用白菜1.1-Build 2017-9-8 12:36:55");
+        logger.info("欢迎使用白菜1.1-Build 2017-9-9 18:14:10");
         //定时任务
         Calendar c = Calendar.getInstance();
         if (c.get(Calendar.HOUR_OF_DAY) >= 4) {
